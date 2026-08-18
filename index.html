@@ -387,10 +387,10 @@
             <h2>Nivel 1 · Verifica antes de creer</h2>
             <p>Recoge <strong>Fuente</strong>, <strong>Fecha</strong> y <strong>Autor</strong>. Solo entonces se abrirá la salida superior.</p>
             <div class="avatar-grid" id="avatarGrid">
-              <button type="button" class="avatar-card selected" data-avatar="student_m"><span class="pixel">👨‍🎓</span>Estudiante hombre</button>
-              <button type="button" class="avatar-card" data-avatar="student_f"><span class="pixel">👩‍🎓</span>Estudiante mujer</button>
-              <button type="button" class="avatar-card" data-avatar="teacher_m"><span class="pixel">👨‍🏫</span>Profesor hombre</button>
-              <button type="button" class="avatar-card" data-avatar="teacher_f"><span class="pixel">👩‍🏫</span>Profesora mujer</button>
+              <button type="button" class="avatar-card selected" data-avatar="student_m"><span class="pixel">👨‍🎓</span>Estudiante</button>
+              <button type="button" class="avatar-card" data-avatar="student_f"><span class="pixel">👩‍🎓</span>Estudiante</button>
+              <button type="button" class="avatar-card" data-avatar="teacher_m"><span class="pixel">👨‍🏫</span>Profesor</button>
+              <button type="button" class="avatar-card" data-avatar="teacher_f"><span class="pixel">👩‍🏫</span>Profesora</button>
             </div>
             <div class="modal-buttons">
               <button type="button" id="startBtn" class="action primary">Comenzar nivel</button>
@@ -635,52 +635,132 @@
     return path.reverse();
   }
 
-  function buildLevel() {
-    const generated = generateMaze();
-    maze = generated.grid;
-    exit = { r: 0, c: generated.exitCol, open: false };
+  function pathLength(start, target) {
+    const path = bfs(start, target);
+    return path.length ? path.length - 1 : Infinity;
+  }
 
-    player = { r: ROWS - 2, c: 1 };
+  function bestCollectionRouteLength(start, exitCell, levelItems) {
+    const perms = [
+      [0,1,2],[0,2,1],
+      [1,0,2],[1,2,0],
+      [2,0,1],[2,1,0]
+    ];
+    let best = Infinity;
+    for (const order of perms) {
+      let total = 0;
+      let from = start;
+      let ok = true;
+      for (const idx of order) {
+        const item = levelItems[idx];
+        const len = pathLength(from, item);
+        if (!Number.isFinite(len)) {
+          ok = false;
+          break;
+        }
+        total += len;
+        from = item;
+      }
+      if (!ok) continue;
+      const exitLen = pathLength(from, exitCell);
+      if (!Number.isFinite(exitLen)) continue;
+      total += exitLen;
+      if (total < best) best = total;
+    }
+    return best;
+  }
+
+  function levelFeelsReachable(start, snakeStart, exitCell, levelItems) {
+    if (levelItems.length !== 3) return false;
+
+    for (const item of levelItems) {
+      if (!Number.isFinite(pathLength(start, item))) return false;
+    }
+    if (!Number.isFinite(pathLength(start, exitCell))) return false;
+
+    const bestRoute = bestCollectionRouteLength(start, exitCell, levelItems);
+    const snakeToPlayer = pathLength(snakeStart, start);
+
+    return Number.isFinite(bestRoute)
+      && bestRoute <= 42
+      && snakeToPlayer >= 10;
+  }
+
+  function buildLevel() {
+    const playerStart = { r: ROWS - 2, c: 1 };
     const snakeStart = { r: ROWS - 2, c: COLS - 2 };
+    const types = ['source','date','author'];
+
+    let built = false;
+
+    for (let attempt = 0; attempt < 80 && !built; attempt++) {
+      const generated = generateMaze();
+      maze = generated.grid;
+      const trialExit = { r: 0, c: generated.exitCol, open: false };
+
+      const excluded = new Set([
+        key(playerStart.r, playerStart.c),
+        key(snakeStart.r, snakeStart.c),
+        key(trialExit.r, trialExit.c),
+        key(1, trialExit.c)
+      ]);
+
+      let candidates = openCells(excluded).filter(cell => {
+        const playerDistance = Math.abs(cell.r - playerStart.r) + Math.abs(cell.c - playerStart.c);
+        const snakeDistance = Math.abs(cell.r - snakeStart.r) + Math.abs(cell.c - snakeStart.c);
+        return playerDistance >= 4 && snakeDistance >= 3;
+      });
+      if (candidates.length < 3) candidates = openCells(excluded);
+      if (candidates.length < 3) continue;
+
+      const pool = [...candidates];
+      const trialItems = [];
+      for (const type of types) {
+        const idx = randomInt(pool.length);
+        const pos = pool.splice(idx, 1)[0];
+        trialItems.push({ ...pos, type, collected: false });
+      }
+
+      if (levelFeelsReachable(playerStart, snakeStart, trialExit, trialItems)) {
+        exit = trialExit;
+        items = trialItems;
+        built = true;
+      }
+    }
+
+    if (!built) {
+      const generated = generateMaze();
+      maze = generated.grid;
+      exit = { r: 0, c: generated.exitCol, open: false };
+      const excluded = new Set([
+        key(playerStart.r, playerStart.c),
+        key(snakeStart.r, snakeStart.c),
+        key(exit.r, exit.c),
+        key(1, exit.c)
+      ]);
+      const fallback = openCells(excluded);
+      items = types.map((type, idx) => ({ ...fallback[Math.min(idx, fallback.length - 1)], type, collected: false }));
+    }
+
+    player = { ...playerStart };
     snake = [];
     for (let i = 0; i < savedSnakeLength; i++) {
       snake.push({ r: snakeStart.r, c: snakeStart.c });
     }
 
-    const excluded = new Set([
-      key(player.r, player.c),
-      key(snakeStart.r, snakeStart.c),
-      key(exit.r, exit.c),
-      key(1, exit.c)
-    ]);
-
-    // Alejar los objetos del punto inicial para obligar a recorrer el mapa.
-    let candidates = openCells(excluded).filter(cell => {
-      const distance = Math.abs(cell.r - player.r) + Math.abs(cell.c - player.c);
-      return distance > 5;
-    });
-    if (candidates.length < 3) candidates = openCells(excluded);
-
-    const types = ['source','date','author'];
-    items = [];
-    for (const type of types) {
-      const idx = randomInt(candidates.length);
-      const pos = candidates.splice(idx, 1)[0];
-      items.push({ ...pos, type, collected: false });
-    }
-
     collected = new Set();
     elapsed = 0;
     snakeTimer = 0;
-    snakeInterval = 430;
-    graceUntil = performance.now() + 1400;
+    snakeInterval = 560;
+    graceUntil = performance.now() + 2200;
     gameState = 'playing';
     startTime = performance.now();
     updateUI();
-    ui.status.textContent = 'Busca Fuente, Fecha y Autor. La serpiente empezará a moverse en un instante.';
+    ui.status.textContent = 'El laberinto sí tiene salida posible. Si te mueves rápido, puedes superar a la víbora.';
   }
 
   function updateUI() {
+
     ui.objSource.textContent = `${collected.has('source') ? '✓' : '□'} Fuente`;
     ui.objDate.textContent = `${collected.has('date') ? '✓' : '□'} Fecha`;
     ui.objAuthor.textContent = `${collected.has('author') ? '✓' : '□'} Autor`;
@@ -762,9 +842,9 @@
     savedSnakeLength = Math.min(100, savedSnakeLength + 1);
     safeStorageSet('fakesnake_snake_length', String(savedSnakeLength));
     ui.messageIcon.textContent = '✅';
-    ui.messageTitle.textContent = 'Nivel 1 superado';
-    ui.messageText.textContent = 'Venciste a la víbora de la mentira porque comprobaste la fuente, la fecha y el autor antes de confiar en el contenido.';
-    ui.messageStats.textContent = `Tiempo: ${elapsed.toFixed(1)} s. La serpiente creció a ${savedSnakeLength} segmentos.`;
+    ui.messageTitle.textContent = '¡Nivel superado!';
+    ui.messageText.textContent = 'Fuiste más rápido que la desinformación porque verificaste la fuente, la fecha y el autor antes de salir.';
+    ui.messageStats.textContent = `Completaste la verificación en ${elapsed.toFixed(1)} s. La víbora creció a ${savedSnakeLength} segmentos para el siguiente nivel.`;
     ui.retryBtn.textContent = 'Jugar nuevamente';
     ui.messageOverlay.classList.remove('hidden');
     ui.status.textContent = 'Nivel superado.';
@@ -1164,46 +1244,105 @@
     const head = snake[0];
     const hx = head.c * TILE + TILE / 2;
     const hy = head.r * TILE + TILE / 2;
+
     ctx.save();
-    ctx.shadowColor = 'rgba(32,245,229,.34)';
-    ctx.shadowBlur = 18;
-    const hg = ctx.createRadialGradient(hx - TILE * .10, hy - TILE * .13, 2, hx, hy, TILE * .34);
-    hg.addColorStop(0, '#14645e');
-    hg.addColorStop(.34, '#071c1a');
-    hg.addColorStop(1, '#000303');
-    ctx.fillStyle = hg;
+    ctx.translate(hx, hy);
+    ctx.shadowColor = 'rgba(32,245,229,.30)';
+    ctx.shadowBlur = 16;
+
+    // Destellos turquesa inspirados en la portada.
+    ctx.strokeStyle = 'rgba(32,245,229,.75)';
+    ctx.lineWidth = TILE * .06;
     ctx.beginPath();
-    ctx.ellipse(hx, hy, TILE * .34, TILE * .29, 0, 0, Math.PI * 2);
+    ctx.moveTo(-TILE * .42, -TILE * .12);
+    ctx.lineTo(-TILE * .70, -TILE * .34);
+    ctx.moveTo(-TILE * .44, TILE * .02);
+    ctx.lineTo(-TILE * .68, TILE * .26);
+    ctx.moveTo(TILE * .42, -TILE * .12);
+    ctx.lineTo(TILE * .70, -TILE * .34);
+    ctx.moveTo(TILE * .44, TILE * .02);
+    ctx.lineTo(TILE * .68, TILE * .26);
+    ctx.stroke();
+
+    // Cabeza geométrica blanca como la portada.
+    ctx.fillStyle = COLORS.white;
+    ctx.beginPath();
+    ctx.moveTo(0, -TILE * .34);
+    ctx.lineTo(TILE * .27, -TILE * .20);
+    ctx.lineTo(TILE * .30, TILE * .02);
+    ctx.lineTo(TILE * .18, TILE * .30);
+    ctx.lineTo(TILE * .05, TILE * .22);
+    ctx.lineTo(0, TILE * .36);
+    ctx.lineTo(-TILE * .05, TILE * .22);
+    ctx.lineTo(-TILE * .18, TILE * .30);
+    ctx.lineTo(-TILE * .30, TILE * .02);
+    ctx.lineTo(-TILE * .27, -TILE * .20);
+    ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle = COLORS.snakeScale;
-    ctx.lineWidth = 2.2;
+
+    ctx.strokeStyle = 'rgba(32,245,229,.35)';
+    ctx.lineWidth = TILE * .02;
     ctx.stroke();
 
-    for (const eyeX of [-.11, .11]) {
-      ctx.fillStyle = '#efffff';
-      ctx.beginPath();
-      ctx.arc(hx + TILE * eyeX, hy - TILE * .055, TILE * .06, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = COLORS.danger;
-      ctx.beginPath();
-      ctx.arc(hx + TILE * eyeX, hy - TILE * .05, TILE * .028, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    ctx.strokeStyle = COLORS.danger;
-    ctx.lineWidth = 2;
+    // Ojos inclinados.
+    ctx.fillStyle = '#000';
     ctx.beginPath();
-    ctx.moveTo(hx, hy + TILE * .18);
-    ctx.lineTo(hx, hy + TILE * .31);
-    ctx.lineTo(hx - TILE * .07, hy + TILE * .36);
-    ctx.moveTo(hx, hy + TILE * .31);
-    ctx.lineTo(hx + TILE * .07, hy + TILE * .36);
-    ctx.stroke();
+    ctx.moveTo(-TILE * .18, -TILE * .14);
+    ctx.lineTo(-TILE * .04, -TILE * .18);
+    ctx.lineTo(-TILE * .11, -TILE * .05);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(TILE * .18, -TILE * .14);
+    ctx.lineTo(TILE * .04, -TILE * .18);
+    ctx.lineTo(TILE * .11, -TILE * .05);
+    ctx.closePath();
+    ctx.fill();
+
+    // Fosas nasales.
+    ctx.beginPath();
+    ctx.moveTo(-TILE * .05, -TILE * .01);
+    ctx.lineTo(-TILE * .015, TILE * .05);
+    ctx.lineTo(-TILE * .075, TILE * .05);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(TILE * .05, -TILE * .01);
+    ctx.lineTo(TILE * .075, TILE * .05);
+    ctx.lineTo(TILE * .015, TILE * .05);
+    ctx.closePath();
+    ctx.fill();
+
+    // Boca y colmillos.
+    ctx.beginPath();
+    ctx.moveTo(-TILE * .16, TILE * .08);
+    ctx.lineTo(-TILE * .05, TILE * .31);
+    ctx.lineTo(0, TILE * .15);
+    ctx.lineTo(TILE * .05, TILE * .31);
+    ctx.lineTo(TILE * .16, TILE * .08);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = COLORS.white;
+    ctx.beginPath();
+    ctx.moveTo(-TILE * .09, TILE * .08);
+    ctx.lineTo(-TILE * .03, TILE * .26);
+    ctx.lineTo(-TILE * .01, TILE * .09);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(TILE * .09, TILE * .08);
+    ctx.lineTo(TILE * .01, TILE * .09);
+    ctx.lineTo(TILE * .03, TILE * .26);
+    ctx.closePath();
+    ctx.fill();
+
     ctx.restore();
     ctx.restore();
   }
 
   function drawPaused() {
+
     if (gameState !== 'paused') return;
     const veil = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, 40, canvas.width / 2, canvas.height / 2, canvas.width * .72);
     veil.addColorStop(0, 'rgba(3,28,27,.72)');
