@@ -409,10 +409,8 @@
             <h2>Nivel 1 · Verifica antes de creer</h2>
             <p>Recoge <strong>Fuente</strong>, <strong>Fecha</strong> y <strong>Autor</strong>. Solo entonces se abrirá la salida superior.</p>
             <div class="avatar-grid" id="avatarGrid">
-              <button type="button" class="avatar-card selected" data-avatar="student_m"><span class="pixel">👨‍🎓</span>Estudiante</button>
-              <button type="button" class="avatar-card" data-avatar="student_f"><span class="pixel">👩‍🎓</span>Estudiante</button>
-              <button type="button" class="avatar-card" data-avatar="teacher_m"><span class="pixel">👨‍🏫</span>Profesor</button>
-              <button type="button" class="avatar-card" data-avatar="teacher_f"><span class="pixel">👩‍🏫</span>Profesora</button>
+              <button type="button" class="avatar-card selected" data-avatar="student"><span class="pixel">🧑‍🎓</span>Estudiante</button>
+              <button type="button" class="avatar-card" data-avatar="teacher"><span class="pixel">🧑‍🏫</span>Profesor/a</button>
             </div>
             <div class="modal-buttons">
               <button type="button" id="startBtn" class="action primary">Comenzar nivel</button>
@@ -504,10 +502,8 @@
   };
 
   const avatarStyles = {
-    student_m: { skin:'#b7794c', hair:'#0a0c0c', shirt:'#0a3d3a', pants:'#051817', accent:'#20f5e5', role:'student', gender:'m' },
-    student_f: { skin:'#a9653f', hair:'#24120e', shirt:'#07534e', pants:'#061d1b', accent:'#7afff6', role:'student', gender:'f' },
-    teacher_m: { skin:'#b7794c', hair:'#111515', shirt:'#102a29', pants:'#050c0c', accent:'#20f5e5', role:'teacher', gender:'m' },
-    teacher_f: { skin:'#a9653f', hair:'#2c1712', shirt:'#123b38', pants:'#050c0c', accent:'#7afff6', role:'teacher', gender:'f' }
+    student: { skin:'#b7794c', hair:'#0a0c0c', shirt:'#0a3d3a', pants:'#051817', accent:'#20f5e5', role:'student' },
+    teacher: { skin:'#b7794c', hair:'#111515', shirt:'#102a29', pants:'#050c0c', accent:'#20f5e5', role:'teacher' }
   };
 
   const ui = {
@@ -546,9 +542,9 @@
     }
   }
 
-  const allowedAvatars = ['student_m', 'student_f', 'teacher_m', 'teacher_f'];
-  let selectedAvatar = safeStorageGet('fakesnake_avatar', 'student_m');
-  if (!allowedAvatars.includes(selectedAvatar)) selectedAvatar = 'student_m';
+  const allowedAvatars = ['student', 'teacher'];
+  let selectedAvatar = safeStorageGet('fakesnake_avatar', 'student');
+  if (!allowedAvatars.includes(selectedAvatar)) selectedAvatar = 'student';
   let savedSnakeLength = Number(safeStorageGet('fakesnake_snake_length', '3'));
   if (!Number.isFinite(savedSnakeLength)) savedSnakeLength = 3;
 
@@ -1108,7 +1104,7 @@
   }
 
   function drawPlayer() {
-    const s = avatarStyles[selectedAvatar] || avatarStyles.student_m;
+    const s = avatarStyles[selectedAvatar] || avatarStyles.student;
     const cx = player.c * TILE + TILE / 2;
     const cy = player.r * TILE + TILE / 2;
     const bob = gameState === 'playing' ? Math.sin(performance.now() * .007) * TILE * .025 : 0;
