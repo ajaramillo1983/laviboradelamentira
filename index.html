@@ -199,6 +199,12 @@
       border-radius: 24px;
     }
 
+    .instructions-panel,
+    .game-controls {
+      display: grid;
+      gap: 15px;
+    }
+
     .side h2, .side h3 { margin: 0; }
     .side h2 { font-size: 23px; color: var(--accent); }
     .side h3 { font-size: 14px; letter-spacing: .12em; text-transform: uppercase; color: #dffffd; }
@@ -362,8 +368,24 @@
       body { align-items: start; padding: 8px; }
       .brand-logo { width: min(100%, 360px); }
       .game-wrap { grid-template-columns: 1fr; }
+      .canvas-card { order: 2; }
       canvas { max-height: none; }
-      .side { padding: 14px; }
+      .side {
+        display: contents;
+      }
+      .instructions-panel,
+      .game-controls {
+        padding: 14px;
+        background: linear-gradient(145deg, rgba(6,24,23,.90), rgba(1,7,7,.92));
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        box-shadow:
+          0 24px 70px var(--shadow),
+          inset 0 1px 0 rgba(255,255,255,.04),
+          0 0 36px rgba(32,245,229,.035);
+      }
+      .instructions-panel { order: 1; }
+      .game-controls { order: 3; }
       .side .desktop-help { display: none; }
       .controls { grid-template-columns: repeat(3, 64px); }
     }
@@ -413,33 +435,37 @@
       </div>
 
       <aside class="side">
-        <h2>Misión</h2>
-        <p>Escapa de la víbora de la mentira verificando la publicación original antes de confiar en un contenido.</p>
+        <div class="instructions-panel">
+          <h2>Misión</h2>
+          <p>Escapa de la víbora de la mentira verificando la publicación original antes de confiar en un contenido.</p>
 
-        <div class="objective">
-          <strong>Elementos de verificación</strong>
-          <span id="objSource">□ Fuente</span>
-          <span id="objDate">□ Fecha</span>
-          <span id="objAuthor">□ Autor</span>
-          <span id="objExit">🔒 Salida bloqueada</span>
+          <div class="objective">
+            <strong>Elementos de verificación</strong>
+            <span id="objSource">□ Fuente</span>
+            <span id="objDate">□ Fecha</span>
+            <span id="objAuthor">□ Autor</span>
+            <span id="objExit">🔒 Salida bloqueada</span>
+          </div>
+
+          <div id="status" class="status">Elige un avatar y pulsa “Comenzar nivel”.</div>
         </div>
 
-        <div id="status" class="status">Elige un avatar y pulsa “Comenzar nivel”.</div>
+        <div class="game-controls">
+          <h3>Controles</h3>
+          <p class="desktop-help">Teclado: flechas o W, A, S, D. Pulsa P para pausar.</p>
+          <div class="controls" aria-label="Controles táctiles">
+            <button class="empty" tabindex="-1"></button>
+            <button data-dir="up" aria-label="Subir">▲</button>
+            <button class="empty" tabindex="-1"></button>
+            <button data-dir="left" aria-label="Izquierda">◀</button>
+            <button data-dir="down" aria-label="Bajar">▼</button>
+            <button data-dir="right" aria-label="Derecha">▶</button>
+          </div>
 
-        <h3>Controles</h3>
-        <p class="desktop-help">Teclado: flechas o W, A, S, D. Pulsa P para pausar.</p>
-        <div class="controls" aria-label="Controles táctiles">
-          <button class="empty" tabindex="-1"></button>
-          <button data-dir="up" aria-label="Subir">▲</button>
-          <button class="empty" tabindex="-1"></button>
-          <button data-dir="left" aria-label="Izquierda">◀</button>
-          <button data-dir="down" aria-label="Bajar">▼</button>
-          <button data-dir="right" aria-label="Derecha">▶</button>
-        </div>
-
-        <div class="actions">
-          <button type="button" id="pauseBtn" class="action">Pausar</button>
-          <button type="button" id="resetBtn" class="action danger">Reiniciar</button>
+          <div class="actions">
+            <button type="button" id="pauseBtn" class="action">Pausar</button>
+            <button type="button" id="resetBtn" class="action danger">Reiniciar</button>
+          </div>
         </div>
       </aside>
     </section>
