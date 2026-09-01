@@ -2020,19 +2020,257 @@
     }
   }
 
+  function drawVolcanicCracks(x, y, r, c) {
+    const centerX = x + TILE * (.34 + jungleSeed(r, c, 101) * .32);
+    const centerY = y + TILE * (.30 + jungleSeed(r, c, 102) * .38);
+    const paths = [
+      [
+        [x + TILE * (.12 + jungleSeed(r, c, 103) * .20), y + TILE * .06],
+        [centerX - TILE * .05, centerY - TILE * .10],
+        [centerX, centerY],
+        [x + TILE * (.72 + jungleSeed(r, c, 104) * .18), y + TILE * .92]
+      ],
+      [
+        [centerX, centerY],
+        [x + TILE * (.76 + jungleSeed(r, c, 105) * .14), y + TILE * (.23 + jungleSeed(r, c, 106) * .18)]
+      ],
+      [
+        [centerX - TILE * .02, centerY + TILE * .03],
+        [x + TILE * (.13 + jungleSeed(r, c, 107) * .20), y + TILE * (.70 + jungleSeed(r, c, 108) * .16)]
+      ]
+    ];
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = '#ff3100';
+    ctx.shadowBlur = TILE * .16;
+    ctx.strokeStyle = '#ff3d0a';
+    ctx.lineWidth = Math.max(1.4, TILE * .055);
+    for (const path of paths) {
+      ctx.beginPath();
+      ctx.moveTo(path[0][0], path[0][1]);
+      for (let i = 1; i < path.length; i++) ctx.lineTo(path[i][0], path[i][1]);
+      ctx.stroke();
+    }
+
+    ctx.shadowBlur = TILE * .08;
+    ctx.strokeStyle = '#ffad32';
+    ctx.lineWidth = Math.max(.7, TILE * .018);
+    for (const path of paths) {
+      ctx.beginPath();
+      ctx.moveTo(path[0][0], path[0][1]);
+      for (let i = 1; i < path.length; i++) ctx.lineTo(path[i][0], path[i][1]);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawVolcanicFlame(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.shadowColor = '#ff2e00';
+    ctx.shadowBlur = scale * .42;
+
+    ctx.fillStyle = '#ff3b0a';
+    ctx.beginPath();
+    ctx.moveTo(0, scale * .42);
+    ctx.bezierCurveTo(-scale * .38, scale * .24, -scale * .30, -scale * .08, -scale * .08, -scale * .43);
+    ctx.bezierCurveTo(-scale * .02, -scale * .14, scale * .18, -scale * .20, scale * .15, -scale * .49);
+    ctx.bezierCurveTo(scale * .43, -scale * .13, scale * .38, scale * .25, 0, scale * .42);
+    ctx.fill();
+
+    ctx.shadowBlur = scale * .22;
+    ctx.fillStyle = '#ff9a18';
+    ctx.beginPath();
+    ctx.moveTo(0, scale * .34);
+    ctx.bezierCurveTo(-scale * .21, scale * .19, -scale * .12, -scale * .03, 0, -scale * .24);
+    ctx.bezierCurveTo(scale * .20, -scale * .01, scale * .22, scale * .20, 0, scale * .34);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffe36b';
+    ctx.beginPath();
+    ctx.ellipse(0, scale * .18, scale * .075, scale * .14, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawVolcanicCone(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    const cone = ctx.createLinearGradient(-scale * .45, -scale * .20, scale * .45, scale * .38);
+    cone.addColorStop(0, '#4a2722');
+    cone.addColorStop(.55, '#201617');
+    cone.addColorStop(1, '#090708');
+    ctx.fillStyle = cone;
+    ctx.beginPath();
+    ctx.moveTo(-scale * .48, scale * .36);
+    ctx.lineTo(-scale * .15, -scale * .18);
+    ctx.lineTo(scale * .15, -scale * .18);
+    ctx.lineTo(scale * .48, scale * .36);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.save();
+    ctx.strokeStyle = '#ff4a13';
+    ctx.lineWidth = Math.max(1.5, scale * .055);
+    ctx.shadowColor = '#ff2d00';
+    ctx.shadowBlur = scale * .20;
+    ctx.beginPath();
+    ctx.moveTo(scale * .02, -scale * .12);
+    ctx.lineTo(-scale * .04, scale * .05);
+    ctx.lineTo(scale * .12, scale * .33);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = '#090607';
+    ctx.beginPath();
+    ctx.ellipse(0, -scale * .17, scale * .18, scale * .08, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.fillStyle = '#ff7a18';
+    ctx.shadowColor = '#ff2d00';
+    ctx.shadowBlur = scale * .22;
+    ctx.beginPath();
+    ctx.ellipse(0, -scale * .17, scale * .12, scale * .045, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.restore();
+  }
+
+  function drawVolcanicWallTile(x, y, r, c) {
+    const pad = TILE * .045;
+    const size = TILE - pad * 2;
+    const tone = Math.floor(jungleSeed(r, c, 109) * 3);
+    const palettes = [
+      ['#544442', '#211d1e', '#090809'],
+      ['#41383a', '#191719', '#070607'],
+      ['#5a4640', '#272021', '#0b0808']
+    ][tone];
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(255,48,0,.26)';
+    ctx.shadowBlur = TILE * .16;
+    ctx.shadowOffsetY = TILE * .07;
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .16);
+    const base = ctx.createLinearGradient(x, y, x + TILE, y + TILE);
+    base.addColorStop(0, palettes[0]);
+    base.addColorStop(.48, palettes[1]);
+    base.addColorStop(1, palettes[2]);
+    ctx.fillStyle = base;
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .16);
+    ctx.clip();
+
+    ctx.fillStyle = 'rgba(255,255,255,.055)';
+    ctx.beginPath();
+    ctx.ellipse(x + TILE * .34, y + TILE * .23, TILE * .25, TILE * .13, -.24, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(0,0,0,.50)';
+    ctx.lineWidth = Math.max(1, TILE * .025);
+    ctx.beginPath();
+    ctx.moveTo(x + TILE * .07, y + TILE * .63);
+    ctx.quadraticCurveTo(x + TILE * .38, y + TILE * .48, x + TILE * .92, y + TILE * .58);
+    ctx.moveTo(x + TILE * .48, y + TILE * .08);
+    ctx.quadraticCurveTo(x + TILE * .56, y + TILE * .28, x + TILE * .48, y + TILE * .49);
+    ctx.stroke();
+
+    drawVolcanicCracks(x, y, r, c);
+
+    const motifSeed = jungleSeed(r, c, 110);
+    const flameTile = (
+      (r === 0 && c === 6)
+      || (r === 7 && c === 0)
+      || (r === 10 && c === COLS - 1)
+      || (r === ROWS - 1 && c === 3)
+      || motifSeed > .955
+    );
+    const volcanoTile = (
+      (r === 0 && c === 4)
+      || (r === 5 && c === COLS - 1)
+      || (r === ROWS - 1 && c === 10)
+      || (motifSeed > .885 && motifSeed < .925)
+    );
+
+    if (flameTile) {
+      ctx.fillStyle = 'rgba(0,0,0,.45)';
+      ctx.beginPath();
+      ctx.ellipse(x + TILE * .50, y + TILE * .74, TILE * .28, TILE * .09, 0, 0, Math.PI * 2);
+      ctx.fill();
+      drawVolcanicFlame(x + TILE * .50, y + TILE * .54, TILE * .64);
+    } else if (volcanoTile) {
+      drawVolcanicCone(x + TILE * .50, y + TILE * .53, TILE * .80);
+    }
+
+    ctx.restore();
+
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .16);
+    ctx.strokeStyle = 'rgba(255,117,48,.24)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  function drawVolcanicFloorTile(x, y, r, c) {
+    const floor = ctx.createLinearGradient(x, y, x + TILE, y + TILE);
+    floor.addColorStop(0, (r + c) % 2 ? '#120807' : '#090606');
+    floor.addColorStop(.58, '#030202');
+    floor.addColorStop(1, '#0b0302');
+    ctx.fillStyle = floor;
+    ctx.fillRect(x, y, TILE, TILE);
+
+    ctx.strokeStyle = 'rgba(255,83,34,.075)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + .5, y + .5, TILE - 1, TILE - 1);
+
+    const ember = jungleSeed(r, c, 120);
+    if (ember > .72) {
+      const emberX = x + TILE * (.18 + jungleSeed(r, c, 121) * .64);
+      const emberY = y + TILE * (.18 + jungleSeed(r, c, 122) * .64);
+      ctx.save();
+      ctx.fillStyle = ember > .92 ? 'rgba(255,193,74,.55)' : 'rgba(255,83,26,.30)';
+      ctx.shadowColor = '#ff420f';
+      ctx.shadowBlur = ember > .92 ? 8 : 4;
+      ctx.beginPath();
+      ctx.arc(emberX, emberY, ember > .92 ? 1.8 : 1.1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
   function drawAmbient(now) {
     const jungle = currentLevel === 1;
+    const volcanic = currentLevel === 2;
     ctx.save();
     for (let i = 0; i < 18; i++) {
       const seedX = (i * 97) % canvas.width;
       const seedY = (i * 173) % canvas.height;
       const drift = Math.sin(now * .00045 + i * 1.7) * 8;
       const alpha = .035 + (i % 4) * .012;
-      ctx.fillStyle = jungle
-        ? `rgba(190,255,104,${alpha * 1.25})`
-        : `rgba(32,245,229,${alpha})`;
+      if (jungle) {
+        ctx.fillStyle = `rgba(190,255,104,${alpha * 1.25})`;
+      } else if (volcanic) {
+        ctx.fillStyle = i % 4 === 0
+          ? `rgba(255,208,92,${alpha * 2.15})`
+          : `rgba(255,73,24,${alpha * 1.85})`;
+      } else {
+        ctx.fillStyle = `rgba(32,245,229,${alpha})`;
+      }
       ctx.beginPath();
-      ctx.arc(seedX + drift, seedY - drift * .4, 1.5 + (i % 3), 0, Math.PI * 2);
+      const emberLift = volcanic ? ((now * .018 + i * 41) % 34) : 0;
+      ctx.arc(
+        seedX + drift,
+        seedY - drift * .4 - emberLift,
+        volcanic ? 1 + (i % 2) : 1.5 + (i % 3),
+        0,
+        Math.PI * 2
+      );
       ctx.fill();
     }
     ctx.restore();
@@ -2103,11 +2341,16 @@
     }
 
     const jungle = currentLevel === 1;
+    const volcanic = currentLevel === 2;
     const boardGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
     if (jungle) {
       boardGradient.addColorStop(0, '#06140b');
       boardGradient.addColorStop(.52, '#010805');
       boardGradient.addColorStop(1, '#09160a');
+    } else if (volcanic) {
+      boardGradient.addColorStop(0, '#170604');
+      boardGradient.addColorStop(.52, '#030202');
+      boardGradient.addColorStop(1, '#1b0703');
     } else {
       boardGradient.addColorStop(0, '#020a0a');
       boardGradient.addColorStop(.55, '#000404');
@@ -2123,11 +2366,15 @@
         if (maze[r] && maze[r][c] === 1) {
           if (jungle) {
             drawJungleWallTile(x, y, r, c);
+          } else if (volcanic) {
+            drawVolcanicWallTile(x, y, r, c);
           } else {
             drawDefaultWallTile(x, y);
           }
         } else if (jungle) {
           drawJungleFloorTile(x, y, r, c);
+        } else if (volcanic) {
+          drawVolcanicFloorTile(x, y, r, c);
         } else {
           drawDefaultFloorTile(x, y, r, c);
         }
