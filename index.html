@@ -458,7 +458,7 @@
       <aside class="side">
         <div class="instructions-panel">
           <h2>Misión</h2>
-          <p id="missionText">Nivel 1. Revisar la fuente. ¿Es confiable, dudosa o inexistente?</p>
+          <p id="missionText">Nivel 1. Revisar la fuente, la fecha y el autor. ¿La fuente es confiable? ¿La información es actual? ¿El autor está identificado?</p>
 
           <div class="objective">
             <strong>Elementos de verificación</strong>
@@ -572,32 +572,32 @@
       label: 'Impreciso', marker: '≈', color: '#ffd08a', icon: '🎯',
       message: '¡Casi! La idea central puede ser correcta, pero hay errores o datos incompletos. Verificar también significa revisar los detalles.'
     },
-    ai: {
-      label: 'IA', marker: 'IA', color: '#a6b8ff', icon: '🤖',
-      message: '¿ES IA? La IA puede crear algo que nunca ocurrió. Antes de creerlo, verifica.'
+    fabricated: {
+      label: 'Contenido fabricado', marker: 'CF', color: '#a6b8ff', icon: '🚨',
+      message: '¡Contenido fabricado! Se elaboró con la intención de desinformar. No lo compartas sin buscar la publicación original, revisar la evidencia y contrastar con otras fuentes.'
     }
   };
 
   const VERIFICATION_ORDER = [
     'source', 'date', 'author', 'context', 'contrast', 'factVsInterpretation',
-    'satire', 'misleading', 'true', 'unverifiable', 'inaccurate', 'ai'
+    'satire', 'misleading', 'true', 'unverifiable', 'inaccurate', 'fabricated'
   ];
   const LEVEL_COUNT = VERIFICATION_ORDER.length - 2;
   const LEVEL_TITLES = [
-    'Verifica el origen',
-    'Recupera el contexto',
-    'Contrasta versiones',
-    'Separa datos e interpretaciones',
-    'Detecta la sátira',
-    'Identifica lo engañoso',
-    'Exige evidencia',
+    'Revisa fuente, fecha y autor',
+    'Busca contexto',
+    'Contrasta antes de compartir',
+    'Distingue dato de interpretación',
+    'Identifica la sátira',
+    'Detecta contenido engañoso',
+    'Confirma si es cierto',
     'Reconoce lo inverificable',
-    'Revisa la precisión',
-    'Detecta la IA'
+    'Detecta información imprecisa',
+    'Identifica contenido fabricado'
   ];
 
   const LEVEL_MISSIONS = [
-    'Revisar la fuente. ¿Es confiable, dudosa o inexistente?',
+    'Revisar la fuente, la fecha y el autor. ¿La fuente es confiable? ¿La información es actual? ¿El autor está identificado?',
     'Buscar contexto. ¿La información está completa o fuera de contexto?',
     'Contrastar antes de compartir. ¿Otras fuentes confirman o contradicen?',
     'Distinguir dato de interpretación. ¿Es un hecho, una opinión o una inferencia?',
