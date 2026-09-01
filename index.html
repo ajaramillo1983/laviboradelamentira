@@ -4338,6 +4338,333 @@
     }
   }
 
+  function drawHighlandMountain(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const mountain = ctx.createLinearGradient(-scale * .42, -scale * .34, scale * .44, scale * .38);
+    mountain.addColorStop(0, '#9ca19d');
+    mountain.addColorStop(.48, '#545d57');
+    mountain.addColorStop(1, '#26332b');
+    ctx.fillStyle = mountain;
+    ctx.strokeStyle = '#303c34';
+    ctx.lineWidth = Math.max(1, scale * .03);
+    ctx.beginPath();
+    ctx.moveTo(0, -scale * .42);
+    ctx.lineTo(-scale * .48, scale * .38);
+    ctx.lineTo(scale * .48, scale * .38);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#f4f7f4';
+    ctx.beginPath();
+    ctx.moveTo(0, -scale * .42);
+    ctx.lineTo(-scale * .18, -scale * .12);
+    ctx.lineTo(-scale * .06, -scale * .18);
+    ctx.lineTo(scale * .06, -scale * .08);
+    ctx.lineTo(scale * .20, -scale * .10);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(23,42,29,.34)';
+    ctx.beginPath();
+    ctx.moveTo(0, -scale * .42);
+    ctx.lineTo(scale * .48, scale * .38);
+    ctx.lineTo(scale * .12, scale * .38);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawHighlandLlama(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = '#eee2c9';
+    ctx.strokeStyle = '#8d765d';
+    ctx.lineWidth = Math.max(1, scale * .03);
+
+    ctx.beginPath();
+    ctx.ellipse(-scale * .05, scale * .10, scale * .29, scale * .22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.lineCap = 'round';
+    ctx.lineWidth = Math.max(4, scale * .17);
+    ctx.beginPath();
+    ctx.moveTo(scale * .16, scale * .02);
+    ctx.lineTo(scale * .18, -scale * .31);
+    ctx.stroke();
+
+    ctx.lineWidth = Math.max(1, scale * .03);
+    ctx.beginPath();
+    ctx.ellipse(scale * .20, -scale * .35, scale * .15, scale * .11, -.12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#eee2c9';
+    ctx.beginPath();
+    ctx.moveTo(scale * .13, -scale * .42);
+    ctx.lineTo(scale * .11, -scale * .57);
+    ctx.lineTo(scale * .20, -scale * .43);
+    ctx.moveTo(scale * .25, -scale * .43);
+    ctx.lineTo(scale * .31, -scale * .56);
+    ctx.lineTo(scale * .33, -scale * .39);
+    ctx.fill();
+
+    ctx.strokeStyle = '#8d765d';
+    ctx.lineWidth = Math.max(1.4, scale * .055);
+    for (const x of [-.22,.02,.10,.25]) {
+      ctx.beginPath();
+      ctx.moveTo(scale * x, scale * .23);
+      ctx.lineTo(scale * x, scale * .44);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = '#15130f';
+    ctx.beginPath();
+    ctx.arc(scale * .25, -scale * .37, scale * .022, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawHighlandRabbit(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = '#ddd4c5';
+    ctx.strokeStyle = '#74685a';
+    ctx.lineWidth = Math.max(1, scale * .03);
+
+    ctx.beginPath();
+    ctx.ellipse(-scale * .06, scale * .14, scale * .27, scale * .22, -.10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.ellipse(scale * .18, -scale * .04, scale * .17, scale * .16, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.ellipse(scale * .12, -scale * .29, scale * .075, scale * .25, -.16, 0, Math.PI * 2);
+    ctx.ellipse(scale * .26, -scale * .28, scale * .075, scale * .24, .12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(-scale * .31, scale * .08, scale * .11, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#161410';
+    ctx.beginPath();
+    ctx.arc(scale * .23, -scale * .07, scale * .025, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#d68188';
+    ctx.beginPath();
+    ctx.arc(scale * .34, 0, scale * .026, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawHighlandGrass(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.lineCap = 'round';
+    const colors = ['#d8ae4b','#b88b34','#e1c169','#9f762c'];
+    for (let i = 0; i < 11; i++) {
+      const x = (i - 5) * scale * .065;
+      const bend = (i % 3 - 1) * scale * .09;
+      ctx.strokeStyle = colors[i % colors.length];
+      ctx.lineWidth = Math.max(1, scale * .028);
+      ctx.beginPath();
+      ctx.moveTo(x, scale * .35);
+      ctx.quadraticCurveTo(x + bend, scale * .02, x + bend * .62, -scale * (.27 + (i % 4) * .035));
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawHighlandFlowers(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const positions=[[-.25,.15],[-.05,-.03],[.18,.12],[.30,-.08],[-.18,-.18]];
+    const colors=['#ffb12f','#f26966','#f3f1dd','#d57bc4','#ffcd3d'];
+    for(let i=0;i<positions.length;i++){
+      const [x,y]=positions[i];
+      ctx.strokeStyle='#5d8730';
+      ctx.lineWidth=Math.max(1,scale*.025);
+      ctx.beginPath();
+      ctx.moveTo(x*scale,(y+.14)*scale);
+      ctx.lineTo(x*scale,y*scale);
+      ctx.stroke();
+      ctx.fillStyle=colors[i];
+      for(let p=0;p<5;p++){
+        const angle=(Math.PI*2*p)/5;
+        ctx.beginPath();
+        ctx.arc(x*scale+Math.cos(angle)*scale*.052,y*scale+Math.sin(angle)*scale*.052,scale*.038,0,Math.PI*2);
+        ctx.fill();
+      }
+      ctx.fillStyle='#704819';
+      ctx.beginPath();
+      ctx.arc(x*scale,y*scale,scale*.025,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawHighlandRocks(cx, cy, scale, r, c) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    for (let i = 0; i < 4; i++) {
+      const rockX = (i - 1.5) * scale * .19 + (jungleSeed(r, c, 365 + i) - .5) * scale * .09;
+      const rockY = scale * (.13 - (i % 2) * .10);
+      const rockW = scale * (.26 + jungleSeed(r, c, 370 + i) * .11);
+      const rockH = scale * (.19 + jungleSeed(r, c, 375 + i) * .10);
+      const rock = ctx.createLinearGradient(rockX - rockW / 2, rockY - rockH / 2, rockX + rockW / 2, rockY + rockH / 2);
+      rock.addColorStop(0, '#9b9d8f');
+      rock.addColorStop(1, '#41473d');
+      ctx.fillStyle = rock;
+      ctx.beginPath();
+      ctx.ellipse(rockX, rockY, rockW / 2, rockH / 2, -.16 + i * .10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(43,49,39,.72)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#71852a';
+    ctx.beginPath();
+    ctx.arc(-scale * .22, scale * .02, scale * .075, 0, Math.PI * 2);
+    ctx.arc(scale * .16, -scale * .04, scale * .065, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawHighlandCondor(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = '#222724';
+    ctx.beginPath();
+    ctx.moveTo(0, scale * .06);
+    ctx.quadraticCurveTo(-scale * .18, -scale * .05, -scale * .44, -scale * .28);
+    ctx.quadraticCurveTo(-scale * .31, scale * .08, -scale * .08, scale * .18);
+    ctx.quadraticCurveTo(scale * .31, scale * .08, scale * .44, -scale * .28);
+    ctx.quadraticCurveTo(scale * .18, -scale * .05, 0, scale * .06);
+    ctx.fill();
+    ctx.fillStyle = '#f3f0df';
+    ctx.beginPath();
+    ctx.arc(0, -scale * .02, scale * .06, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#d69b28';
+    ctx.beginPath();
+    ctx.moveTo(0, -scale * .02);
+    ctx.lineTo(scale * .12, scale * .02);
+    ctx.lineTo(0, scale * .06);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawHighlandWallTile(x, y, r, c) {
+    const pad = TILE * .045;
+    const size = TILE - pad * 2;
+    const tone = Math.floor(jungleSeed(r, c, 355) * 3);
+    const palettes = [
+      ['#77765a', '#454b31', '#202519'],
+      ['#6c6a50', '#3b422c', '#1a2015'],
+      ['#85816a', '#50533b', '#24291c']
+    ][tone];
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.76)';
+    ctx.shadowBlur = TILE * .17;
+    ctx.shadowOffsetY = TILE * .09;
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .14);
+    const base = ctx.createLinearGradient(x, y, x + TILE, y + TILE);
+    base.addColorStop(0, palettes[0]);
+    base.addColorStop(.50, palettes[1]);
+    base.addColorStop(1, palettes[2]);
+    ctx.fillStyle = base;
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .14);
+    ctx.clip();
+
+    ctx.fillStyle = 'rgba(233,240,204,.09)';
+    ctx.beginPath();
+    ctx.ellipse(x + TILE * .34, y + TILE * .15, TILE * .29, TILE * .085, -.18, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(106,125,43,.36)';
+    ctx.beginPath();
+    ctx.arc(x + TILE * .18, y + TILE * .74, TILE * .12, 0, Math.PI * 2);
+    ctx.arc(x + TILE * .75, y + TILE * .72, TILE * .14, 0, Math.PI * 2);
+    ctx.fill();
+
+    const motifSeed = jungleSeed(r, c, 356);
+    let motif = Math.floor(motifSeed * 7);
+    if (r === 0 && c === 2) motif = 0;
+    else if (r === 0 && c === 4) motif = 1;
+    else if (r === 0 && c === 6) motif = 2;
+    else if (r === 0 && c === 8) motif = 3;
+    else if (r === 0 && c === 10) motif = 4;
+    else if (r === 5 && c === 0) motif = 5;
+    else if (r === 8 && c === COLS - 1) motif = 6;
+
+    const cx = x + TILE * .50;
+    const cy = y + TILE * .52;
+    if (motif === 0) {
+      drawHighlandMountain(cx, cy, TILE * .78);
+    } else if (motif === 1) {
+      drawHighlandLlama(cx, cy + TILE * .04, TILE * .70);
+    } else if (motif === 2) {
+      drawHighlandRabbit(cx, cy + TILE * .04, TILE * .70);
+    } else if (motif === 3) {
+      drawHighlandGrass(cx, cy, TILE * .76);
+    } else if (motif === 4) {
+      drawHighlandFlowers(cx, cy, TILE * .75);
+    } else if (motif === 5) {
+      drawHighlandRocks(cx, cy + TILE * .08, TILE * .78, r, c);
+    } else {
+      drawHighlandCondor(cx, cy, TILE * .72);
+    }
+
+    ctx.restore();
+
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .14);
+    ctx.strokeStyle = 'rgba(179,187,137,.28)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  function drawHighlandFloorTile(x, y, r, c) {
+    const floor = ctx.createLinearGradient(x, y, x + TILE, y + TILE);
+    floor.addColorStop(0, (r + c) % 2 ? '#08100b' : '#0d170e');
+    floor.addColorStop(.58, '#010302');
+    floor.addColorStop(1, '#081109');
+    ctx.fillStyle = floor;
+    ctx.fillRect(x, y, TILE, TILE);
+
+    ctx.strokeStyle = 'rgba(104,126,78,.075)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + .5, y + .5, TILE - 1, TILE - 1);
+
+    const mist = jungleSeed(r, c, 385);
+    if (mist > .76) {
+      ctx.fillStyle = mist > .92 ? 'rgba(234,242,229,.34)' : 'rgba(188,167,91,.18)';
+      ctx.beginPath();
+      ctx.arc(
+        x + TILE * (.18 + jungleSeed(r, c, 386) * .64),
+        y + TILE * (.18 + jungleSeed(r, c, 387) * .64),
+        mist > .92 ? 1.6 : .9,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+    }
+  }
+
   function drawAmbient(now) {
     const jungle = currentLevel === 1;
     const volcanic = currentLevel === 2;
@@ -4347,6 +4674,7 @@
     const city = currentLevel === 6;
     const cave = currentLevel === 7;
     const island = currentLevel === 8;
+    const highland = currentLevel === 9;
     ctx.save();
     for (let i = 0; i < 18; i++) {
       const seedX = (i * 97) % canvas.width;
@@ -4384,6 +4712,10 @@
         ctx.fillStyle = i % 3 === 0
           ? `rgba(103,237,219,${alpha * 1.28})`
           : `rgba(239,211,117,${alpha * 1.10})`;
+      } else if (highland) {
+        ctx.fillStyle = i % 3 === 0
+          ? `rgba(237,244,235,${alpha * 1.18})`
+          : `rgba(198,176,103,${alpha * 1.02})`;
       } else {
         ctx.fillStyle = `rgba(32,245,229,${alpha})`;
       }
@@ -4393,9 +4725,9 @@
       const bubbleLift = marine ? ((now * .013 + i * 31) % 48) : 0;
       const skyDrift = sky ? ((now * .008 + i * 19) % 56) : 0;
       ctx.arc(
-        city ? seedX : cave ? seedX + drift * .25 : island ? seedX + drift * .45 : seedX + drift + sandDrift + skyDrift + (marine ? Math.sin(now * .0012 + i) * 5 : 0),
-        city ? seedY : cave ? seedY + Math.sin(now * .0008 + i) * 2 : island ? seedY + Math.sin(now * .0011 + i) * 3 : seedY - drift * .4 - emberLift - bubbleLift + (desert ? Math.sin(now * .001 + i) * 3 : 0) + (sky ? Math.sin(now * .0009 + i) * 4 : 0),
-        volcanic ? 1 + (i % 2) : desert ? .9 + (i % 3) * .45 : marine ? 1.1 + (i % 3) * .55 : sky ? 1.3 + (i % 3) * .50 : city ? .9 + (i % 2) * .6 : cave ? .9 + (i % 2) * .45 : island ? 1 + (i % 3) * .42 : 1.5 + (i % 3),
+        city ? seedX : cave ? seedX + drift * .25 : island ? seedX + drift * .45 : highland ? seedX + drift * .18 : seedX + drift + sandDrift + skyDrift + (marine ? Math.sin(now * .0012 + i) * 5 : 0),
+        city ? seedY : cave ? seedY + Math.sin(now * .0008 + i) * 2 : island ? seedY + Math.sin(now * .0011 + i) * 3 : highland ? seedY + Math.sin(now * .00065 + i) * 2.5 : seedY - drift * .4 - emberLift - bubbleLift + (desert ? Math.sin(now * .001 + i) * 3 : 0) + (sky ? Math.sin(now * .0009 + i) * 4 : 0),
+        volcanic ? 1 + (i % 2) : desert ? .9 + (i % 3) * .45 : marine ? 1.1 + (i % 3) * .55 : sky ? 1.3 + (i % 3) * .50 : city ? .9 + (i % 2) * .6 : cave ? .9 + (i % 2) * .45 : island ? 1 + (i % 3) * .42 : highland ? .9 + (i % 3) * .38 : 1.5 + (i % 3),
         0,
         Math.PI * 2
       );
@@ -4481,6 +4813,7 @@
     const city = currentLevel === 6;
     const cave = currentLevel === 7;
     const island = currentLevel === 8;
+    const highland = currentLevel === 9;
     const boardGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
     if (jungle) {
       boardGradient.addColorStop(0, '#06140b');
@@ -4514,6 +4847,10 @@
       boardGradient.addColorStop(0, '#092019');
       boardGradient.addColorStop(.52, '#010403');
       boardGradient.addColorStop(1, '#10281b');
+    } else if (highland) {
+      boardGradient.addColorStop(0, '#10180f');
+      boardGradient.addColorStop(.52, '#010302');
+      boardGradient.addColorStop(1, '#1a2115');
     } else {
       boardGradient.addColorStop(0, '#020a0a');
       boardGradient.addColorStop(.55, '#000404');
@@ -4543,6 +4880,8 @@
             drawCaveWallTile(x, y, r, c);
           } else if (island) {
             drawIslandWallTile(x, y, r, c);
+          } else if (highland) {
+            drawHighlandWallTile(x, y, r, c);
           } else {
             drawDefaultWallTile(x, y);
           }
@@ -4562,6 +4901,8 @@
           drawCaveFloorTile(x, y, r, c);
         } else if (island) {
           drawIslandFloorTile(x, y, r, c);
+        } else if (highland) {
+          drawHighlandFloorTile(x, y, r, c);
         } else {
           drawDefaultFloorTile(x, y, r, c);
         }
