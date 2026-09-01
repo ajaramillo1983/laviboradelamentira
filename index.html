@@ -366,6 +366,71 @@
       filter: drop-shadow(0 5px 7px rgba(0,0,0,.42));
     }
 
+    .quiz-modal {
+      width: min(560px, 100%);
+    }
+
+    .quiz-progress {
+      color: var(--accent) !important;
+      font-weight: 800;
+    }
+
+    .quiz-statement {
+      color: #efffff !important;
+      font-size: clamp(17px, 2.4vw, 22px) !important;
+      line-height: 1.35 !important;
+    }
+
+    .quiz-options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 12px 0 8px;
+    }
+
+    .quiz-options button {
+      min-height: 44px;
+    }
+
+    .quiz-options button.correct-answer {
+      color: #03110d;
+      border-color: #73ffc4;
+      background: linear-gradient(135deg, #73ffc4, #20f5e5);
+    }
+
+    .quiz-options button.wrong-answer {
+      color: #fff;
+      border-color: #ff7587;
+      background: linear-gradient(135deg, #8f2940, #5b1528);
+    }
+
+    .quiz-feedback {
+      min-height: 46px;
+      margin-top: 8px !important;
+      padding: 9px 11px;
+      border: 1px solid rgba(32,245,229,.22);
+      border-radius: 12px;
+      background: rgba(1,15,14,.72);
+    }
+
+    .quiz-feedback.correct {
+      color: #bfffe2 !important;
+      border-color: rgba(115,255,196,.48);
+    }
+
+    .quiz-feedback.incorrect {
+      color: #ffd1d8 !important;
+      border-color: rgba(255,117,135,.48);
+    }
+
+    .controls button:disabled,
+    button.action:disabled {
+      cursor: not-allowed;
+      opacity: .45;
+      box-shadow: none;
+      transform: none;
+    }
+
     .hidden { display: none !important; }
 
     .sr-only {
@@ -604,6 +669,24 @@
             </div>
           </div>
         </div>
+
+        <div id="quizOverlay" class="overlay hidden">
+          <div class="modal quiz-modal">
+            <div id="quizIcon" class="big">🧠</div>
+            <p id="quizProgress" class="quiz-progress">Pregunta 1 de 5</p>
+            <h2 id="quizTitle">¿Verdadero o falso?</h2>
+            <p id="quizStatement" class="quiz-statement"></p>
+            <div id="quizOptions" class="quiz-options">
+              <button type="button" id="quizTrueBtn" class="action">Verdadero</button>
+              <button type="button" id="quizFalseBtn" class="action">Falso</button>
+            </div>
+            <p id="quizFeedback" class="quiz-feedback hidden" aria-live="polite"></p>
+            <div class="modal-buttons">
+              <button type="button" id="quizNextBtn" class="action primary hidden">Siguiente pregunta</button>
+              <button type="button" id="quizRestartBtn" class="action primary hidden">Jugar desde el nivel 1</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="game-controls" aria-label="Controles del juego">
@@ -734,6 +817,110 @@
     'Identifica contenido fabricado'
   ];
 
+  const QUIZ_LENGTH = 5;
+  const QUIZ_BANK = [
+    {
+      statement: 'Una fuente confiable debe poder identificarse y comprobarse.',
+      answer: true,
+      explanation: 'Una fuente confiable deja huellas que permiten encontrarla y verificarla.'
+    },
+    {
+      statement: 'Si no se puede identificar la fuente, el contenido debe compartirse de inmediato.',
+      answer: false,
+      explanation: 'Si la fuente no puede encontrarse o comprobarse, todavía no conviene confiar ni compartir.'
+    },
+    {
+      statement: 'Revisar la fecha ayuda a detectar si una información antigua se presenta como actual.',
+      answer: true,
+      explanation: 'La fecha permite saber cuándo se publicó el contenido y si mantiene su vigencia.'
+    },
+    {
+      statement: 'Una noticia que fue verdadera en el pasado siempre explica correctamente lo que ocurre hoy.',
+      answer: false,
+      explanation: 'Un contenido antiguo puede perder vigencia o utilizarse para describir incorrectamente un hecho actual.'
+    },
+    {
+      statement: 'Conocer quién es el autor permite revisar su trayectoria y experiencia.',
+      answer: true,
+      explanation: 'Identificar al autor ayuda a evaluar su experiencia, sus posibles intereses y su responsabilidad sobre lo publicado.'
+    },
+    {
+      statement: 'El autor deja de ser importante cuando una publicación tiene muchas reacciones.',
+      answer: false,
+      explanation: 'La popularidad no reemplaza la identificación ni la evaluación del autor.'
+    },
+    {
+      statement: 'Una frase puede ser cierta y, aun así, engañar si se presenta fuera de contexto.',
+      answer: true,
+      explanation: 'El contexto permite comprender las circunstancias, los antecedentes y el sentido completo de la información.'
+    },
+    {
+      statement: 'Una información fuera de contexto siempre es completamente inventada.',
+      answer: false,
+      explanation: 'Puede incluir elementos ciertos y resultar engañosa por lo que omite o por la forma en que los presenta.'
+    },
+    {
+      statement: 'Contrastar consiste en elegir la versión que más coincide con lo que pensamos.',
+      answer: false,
+      explanation: 'Contrastar significa comparar fuentes y evidencias, no confirmar una preferencia personal.'
+    },
+    {
+      statement: 'Si dos fuentes se contradicen, conviene investigar por qué ofrecen versiones diferentes.',
+      answer: true,
+      explanation: 'Las contradicciones son una señal para revisar la evidencia, el contexto y la calidad de cada fuente.'
+    },
+    {
+      statement: 'Un dato verificable y una interpretación son exactamente lo mismo.',
+      answer: false,
+      explanation: 'Un dato puede comprobarse; una interpretación explica o valora ese dato desde una perspectiva.'
+    },
+    {
+      statement: 'Una inferencia es una conclusión y no debe presentarse automáticamente como un hecho.',
+      answer: true,
+      explanation: 'Las inferencias deben distinguirse de los datos comprobados y justificarse con evidencia.'
+    },
+    {
+      statement: 'La sátira puede usar humor o exageración sin pretender informar literalmente.',
+      answer: true,
+      explanation: 'La sátira exagera o inventa con una intención humorística y no necesariamente busca engañar.'
+    },
+    {
+      statement: 'Todo contenido falso fue creado necesariamente con la intención de desinformar.',
+      answer: false,
+      explanation: 'La sátira puede incluir falsedades con intención humorística, sin pretender que se interpreten literalmente.'
+    },
+    {
+      statement: 'El contenido engañoso puede mezclar hechos ciertos con omisiones o distorsiones.',
+      answer: true,
+      explanation: 'Lo engañoso puede apoyarse en elementos reales y alterar su sentido mediante omisiones o distorsiones.'
+    },
+    {
+      statement: 'Para clasificar una información como cierta basta con que parezca creíble.',
+      answer: false,
+      explanation: 'La apariencia de credibilidad no basta: se necesita evidencia suficiente y consistente.'
+    },
+    {
+      statement: 'Una afirmación puede clasificarse como cierta cuando existe evidencia suficiente y consistente.',
+      answer: true,
+      explanation: 'La evidencia comprobable y coherente permite sostener la clasificación de una afirmación como cierta.'
+    },
+    {
+      statement: 'Si no hay pruebas suficientes, una afirmación debe clasificarse automáticamente como falsa.',
+      answer: false,
+      explanation: 'Cuando la evidencia no permite confirmar ni refutar, la clasificación adecuada puede ser inverificable.'
+    },
+    {
+      statement: 'Un contenido impreciso puede tener una idea central válida y contener errores o datos incompletos.',
+      answer: true,
+      explanation: 'Lo impreciso conserva un núcleo válido, pero falla en detalles o deja información incompleta.'
+    },
+    {
+      statement: 'El contenido fabricado se elabora con la intención de desinformar.',
+      answer: true,
+      explanation: 'El contenido fabricado se crea deliberadamente para engañar o desinformar.'
+    }
+  ];
+
   const ui = {
     startOverlay: document.getElementById('startOverlay'),
     startLevelTitle: document.getElementById('startLevelTitle'),
@@ -755,7 +942,18 @@
     messageIcon: document.getElementById('messageIcon'),
     messageTitle: document.getElementById('messageTitle'),
     messageText: document.getElementById('messageText'),
-    messageStats: document.getElementById('messageStats')
+    messageStats: document.getElementById('messageStats'),
+    quizOverlay: document.getElementById('quizOverlay'),
+    quizIcon: document.getElementById('quizIcon'),
+    quizProgress: document.getElementById('quizProgress'),
+    quizTitle: document.getElementById('quizTitle'),
+    quizStatement: document.getElementById('quizStatement'),
+    quizOptions: document.getElementById('quizOptions'),
+    quizTrueBtn: document.getElementById('quizTrueBtn'),
+    quizFalseBtn: document.getElementById('quizFalseBtn'),
+    quizFeedback: document.getElementById('quizFeedback'),
+    quizNextBtn: document.getElementById('quizNextBtn'),
+    quizRestartBtn: document.getElementById('quizRestartBtn')
   };
 
   function safeStorageGet(key, fallback = null) {
@@ -785,6 +983,10 @@
   savedSnakeLength = Math.max(3, Math.min(savedSnakeLength, currentLevel + 2));
   let activeTypes = VERIFICATION_ORDER.slice(0, currentLevel + 2);
   let resultAction = 'retry';
+  let quizQuestions = [];
+  let quizIndex = 0;
+  let quizScore = 0;
+  let quizAnswered = false;
 
   let maze = [];
   let player = { r: ROWS - 2, c: 1 };
@@ -792,7 +994,7 @@
   let items = [];
   let exit = { r: 0, c: 1, open: false };
   let collected = new Set();
-  let gameState = 'menu'; // menu | playing | paused | learning | won | lost
+  let gameState = 'menu'; // menu | playing | paused | learning | won | lost | quiz
   let startTime = 0;
   let elapsed = 0;
   let snakeTimer = 0;
@@ -1307,9 +1509,9 @@
       resultAction = 'next';
       ui.retryBtn.textContent = 'Siguiente nivel';
     } else {
-      resultAction = 'restart';
-      ui.retryBtn.textContent = 'Jugar desde el nivel 1';
-      ui.messageStats.textContent += ' Superaste los 10 niveles.';
+      resultAction = 'quiz';
+      ui.retryBtn.textContent = 'Responder el cuestionario final';
+      ui.messageStats.textContent += ' Superaste los 10 niveles. Ahora demuestra lo que aprendiste.';
     }
     ui.messageOverlay.classList.remove('hidden');
     ui.status.textContent = 'Nivel superado.';
@@ -1329,6 +1531,125 @@
     ui.status.textContent = 'Nivel perdido.';
   }
 
+  function shuffleQuestions(questions) {
+    const shuffled = [...questions];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = randomInt(i + 1);
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
+
+  function setGameControlsEnabled(enabled) {
+    ui.pauseBtn.disabled = !enabled;
+    ui.resetBtn.disabled = !enabled;
+    document.querySelectorAll('.controls button[data-dir]').forEach(button => {
+      button.disabled = !enabled;
+    });
+  }
+
+  function startQuiz() {
+    gameState = 'quiz';
+    quizQuestions = shuffleQuestions(QUIZ_BANK).slice(0, QUIZ_LENGTH);
+    quizIndex = 0;
+    quizScore = 0;
+    quizAnswered = false;
+    ui.startOverlay.classList.add('hidden');
+    ui.itemOverlay.classList.add('hidden');
+    ui.messageOverlay.classList.add('hidden');
+    ui.quizOverlay.classList.remove('hidden');
+    setGameControlsEnabled(false);
+    renderQuizQuestion();
+  }
+
+  function renderQuizQuestion() {
+    const question = quizQuestions[quizIndex];
+    if (!question) {
+      showQuizResult();
+      return;
+    }
+
+    quizAnswered = false;
+    ui.quizIcon.textContent = '🧠';
+    ui.quizProgress.textContent = `Pregunta ${quizIndex + 1} de ${QUIZ_LENGTH}`;
+    ui.quizTitle.textContent = '¿Verdadero o falso?';
+    ui.quizStatement.textContent = question.statement;
+    ui.quizOptions.classList.remove('hidden');
+    ui.quizFeedback.className = 'quiz-feedback hidden';
+    ui.quizFeedback.textContent = '';
+    ui.quizNextBtn.classList.add('hidden');
+    ui.quizRestartBtn.classList.add('hidden');
+
+    [ui.quizTrueBtn, ui.quizFalseBtn].forEach(button => {
+      button.disabled = false;
+      button.classList.remove('correct-answer', 'wrong-answer');
+    });
+  }
+
+  function answerQuiz(selectedAnswer) {
+    if (gameState !== 'quiz' || quizAnswered) return;
+
+    const question = quizQuestions[quizIndex];
+    const isCorrect = selectedAnswer === question.answer;
+    quizAnswered = true;
+    if (isCorrect) quizScore += 1;
+
+    const correctButton = question.answer ? ui.quizTrueBtn : ui.quizFalseBtn;
+    const selectedButton = selectedAnswer ? ui.quizTrueBtn : ui.quizFalseBtn;
+    correctButton.classList.add('correct-answer');
+    if (!isCorrect) selectedButton.classList.add('wrong-answer');
+
+    ui.quizTrueBtn.disabled = true;
+    ui.quizFalseBtn.disabled = true;
+    ui.quizFeedback.textContent = `${isCorrect ? 'Correcto.' : 'Incorrecto.'} ${question.explanation}`;
+    ui.quizFeedback.className = `quiz-feedback ${isCorrect ? 'correct' : 'incorrect'}`;
+    ui.quizNextBtn.textContent = quizIndex === QUIZ_LENGTH - 1 ? 'Ver resultado' : 'Siguiente pregunta';
+    ui.quizNextBtn.classList.remove('hidden');
+  }
+
+  function advanceQuiz() {
+    if (!quizAnswered) return;
+    quizIndex += 1;
+    if (quizIndex >= QUIZ_LENGTH) {
+      showQuizResult();
+    } else {
+      renderQuizQuestion();
+    }
+  }
+
+  function showQuizResult() {
+    gameState = 'quiz';
+    quizAnswered = true;
+    ui.quizIcon.textContent = '🏆';
+    ui.quizProgress.textContent = 'Cuestionario completado';
+    ui.quizTitle.textContent = '¡Felicitaciones!';
+    ui.quizStatement.textContent = 'No solo lograste ser más rápido que la desinformación: también aprendiste en el camino.';
+    ui.quizOptions.classList.add('hidden');
+    ui.quizNextBtn.classList.add('hidden');
+    ui.quizRestartBtn.classList.remove('hidden');
+
+    let closingMessage = 'Revisa los mensajes del juego y vuelve a intentarlo para seguir aprendiendo.';
+    if (quizScore === QUIZ_LENGTH) {
+      closingMessage = 'Dominas los principios de verificación.';
+    } else if (quizScore >= 3) {
+      closingMessage = 'Tienes una base sólida para seguir verificando.';
+    }
+
+    ui.quizFeedback.textContent = `Respondiste correctamente ${quizScore} de ${QUIZ_LENGTH} preguntas. ${closingMessage}`;
+    ui.quizFeedback.className = 'quiz-feedback correct';
+    ui.status.textContent = `Cuestionario completado: ${quizScore} respuestas correctas de ${QUIZ_LENGTH}.`;
+  }
+
+  function restartAfterQuiz() {
+    currentLevel = 1;
+    savedSnakeLength = 3;
+    safeStorageSet('fakesnake_level', '1');
+    safeStorageSet('fakesnake_snake_length', '3');
+    ui.quizOverlay.classList.add('hidden');
+    setGameControlsEnabled(true);
+    showMenu();
+  }
+
   function togglePause() {
     if (gameState === 'playing') {
       gameState = 'paused';
@@ -1346,6 +1667,8 @@
     gameState = 'menu';
     ui.itemOverlay.classList.add('hidden');
     ui.messageOverlay.classList.add('hidden');
+    ui.quizOverlay.classList.add('hidden');
+    setGameControlsEnabled(true);
     ui.startOverlay.classList.remove('hidden');
     updateLevelIntro();
     ui.status.textContent = 'Elige un avatar y pulsa «Comenzar nivel».';
@@ -1357,20 +1680,27 @@
     ui.startOverlay.classList.add('hidden');
     ui.itemOverlay.classList.add('hidden');
     ui.messageOverlay.classList.add('hidden');
+    ui.quizOverlay.classList.add('hidden');
+    setGameControlsEnabled(true);
     ui.pauseBtn.textContent = 'Pausar';
     buildLevel();
     canvas.focus({ preventScroll: true });
   }
 
   function resetLevel() {
-    if (gameState === 'menu') return;
+    if (gameState === 'menu' || gameState === 'quiz') return;
     ui.itemOverlay.classList.add('hidden');
     ui.messageOverlay.classList.add('hidden');
+    ui.quizOverlay.classList.add('hidden');
     ui.pauseBtn.textContent = 'Pausar';
     buildLevel();
   }
 
   function handleResultAction() {
+    if (resultAction === 'quiz') {
+      startQuiz();
+      return;
+    }
     if (resultAction === 'next') {
       currentLevel = Math.min(LEVEL_COUNT, currentLevel + 1);
       safeStorageSet('fakesnake_level', String(currentLevel));
@@ -1921,6 +2251,10 @@
   ui.startBtn.addEventListener('click', startSelected);
   ui.continueBtn.addEventListener('click', continueAfterItem);
   ui.retryBtn.addEventListener('click', handleResultAction);
+  ui.quizTrueBtn.addEventListener('click', () => answerQuiz(true));
+  ui.quizFalseBtn.addEventListener('click', () => answerQuiz(false));
+  ui.quizNextBtn.addEventListener('click', advanceQuiz);
+  ui.quizRestartBtn.addEventListener('click', restartAfterQuiz);
   ui.menuBtn.addEventListener('click', showMenu);
   ui.pauseBtn.addEventListener('click', togglePause);
   ui.resetBtn.addEventListener('click', resetLevel);
