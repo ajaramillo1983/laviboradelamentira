@@ -782,6 +782,7 @@
   if (!Number.isFinite(savedSnakeLength)) savedSnakeLength = 3;
   let currentLevel = Number(safeStorageGet('fakesnake_level', '1'));
   if (!Number.isInteger(currentLevel) || currentLevel < 1 || currentLevel > LEVEL_COUNT) currentLevel = 1;
+  savedSnakeLength = Math.max(3, Math.min(savedSnakeLength, currentLevel + 2));
   let activeTypes = VERIFICATION_ORDER.slice(0, currentLevel + 2);
   let resultAction = 'retry';
 
@@ -827,16 +828,48 @@
       }
     }
 
+    function ensureTwoWaysOut(r, c) {
+      const connectors = [
+        { wall: { r: r - 1, c }, beyond: { r: r - 2, c } },
+        { wall: { r: r + 1, c }, beyond: { r: r + 2, c } },
+        { wall: { r, c: c - 1 }, beyond: { r, c: c - 2 } },
+        { wall: { r, c: c + 1 }, beyond: { r, c: c + 2 } }
+      ].filter(option => (
+        option.beyond.r > 0 && option.beyond.r < ROWS - 1
+        && option.beyond.c > 0 && option.beyond.c < COLS - 1
+        && grid[option.beyond.r][option.beyond.c] === 0
+      ));
+
+      let openWays = connectors.filter(option => grid[option.wall.r][option.wall.c] === 0).length;
+      for (const option of connectors) {
+        if (openWays >= 2) break;
+        if (grid[option.wall.r][option.wall.c] === 1) {
+          grid[option.wall.r][option.wall.c] = 0;
+          openWays++;
+        }
+      }
+    }
+
     carve(ROWS - 2, 1);
 
-    // Añadir algunos atajos para que la persecución no dependa de un único pasillo.
-    for (let i = 0; i < 10; i++) {
+    const playerStart = { r: ROWS - 2, c: 1 };
+    const snakeStart = { r: ROWS - 2, c: COLS - 2 };
+    ensureTwoWaysOut(playerStart.r, playerStart.c);
+    ensureTwoWaysOut(snakeStart.r, snakeStart.c);
+
+    // Los primeros niveles tienen más rutas alternativas. La complejidad aumenta
+    // gradualmente, pero todos los niveles conservan suficientes escapes.
+    const shortcutTarget = Math.max(9, 16 - Math.floor((currentLevel - 1) * .7));
+    let shortcuts = 0;
+    for (let attempt = 0; attempt < 320 && shortcuts < shortcutTarget; attempt++) {
       const r = 1 + randomInt(ROWS - 2);
       const c = 1 + randomInt(COLS - 2);
-      if (grid[r][c] === 1) {
-        const horizontal = c > 0 && c < COLS - 1 && grid[r][c - 1] === 0 && grid[r][c + 1] === 0;
-        const vertical = r > 0 && r < ROWS - 1 && grid[r - 1][c] === 0 && grid[r + 1][c] === 0;
-        if (horizontal || vertical) grid[r][c] = 0;
+      if (grid[r][c] !== 1) continue;
+      const horizontal = grid[r][c - 1] === 0 && grid[r][c + 1] === 0;
+      const vertical = grid[r - 1][c] === 0 && grid[r + 1][c] === 0;
+      if (horizontal || vertical) {
+        grid[r][c] = 0;
+        shortcuts++;
       }
     }
 
@@ -860,7 +893,7 @@
     return cells;
   }
 
-  function bfs(start, target) {
+  function bfs(start, target, blocked = null) {
     const q = [start];
     const came = new Map();
     came.set(key(start.r, start.c), null);
@@ -875,6 +908,7 @@
         if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
         if (maze[nr][nc] !== 0) continue;
         const k = key(nr,nc);
+        if (blocked && blocked.has(k)) continue;
         if (!came.has(k)) {
           came.set(k, cur);
           q.push({r:nr,c:nc});
@@ -894,50 +928,179 @@
     return path.reverse();
   }
 
-  function pathLength(start, target) {
-    const path = bfs(start, target);
+  function pathLength(start, target, blocked = null) {
+    const path = bfs(start, target, blocked);
     return path.length ? path.length - 1 : Infinity;
   }
 
-  function bestCollectionRouteLength(start, exitCell, levelItems) {
+  function distanceMap(start) {
+    const distances = new Map([[key(start.r, start.c), 0]]);
+    const queue = [start];
+    const dirs = [[-1,0],[1,0],[0,-1],[0,1]];
+
+    for (let index = 0; index < queue.length; index++) {
+      const current = queue[index];
+      const currentDistance = distances.get(key(current.r, current.c));
+      for (const [dr, dc] of dirs) {
+        const nr = current.r + dr;
+        const nc = current.c + dc;
+        if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+        if (maze[nr][nc] !== 0) continue;
+        const cellKey = key(nr, nc);
+        if (distances.has(cellKey)) continue;
+        distances.set(cellKey, currentDistance + 1);
+        queue.push({ r: nr, c: nc });
+      }
+    }
+
+    return distances;
+  }
+
+  function bestCollectionRoute(start, exitCell, levelItems, blocked = null) {
     const remaining = [...levelItems];
-    let total = 0;
+    const route = [];
     let from = start;
 
     while (remaining.length) {
       let nearestIndex = -1;
-      let nearestDistance = Infinity;
+      let nearestPath = [];
+
       remaining.forEach((item, index) => {
-        const distance = pathLength(from, item);
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
+        const path = bfs(from, item, blocked);
+        if (path.length && (!nearestPath.length || path.length < nearestPath.length)) {
+          nearestPath = path;
           nearestIndex = index;
         }
       });
-      if (nearestIndex < 0 || !Number.isFinite(nearestDistance)) return Infinity;
-      total += nearestDistance;
+
+      if (nearestIndex < 0) return [];
+      route.push(...nearestPath.slice(1));
       from = remaining.splice(nearestIndex, 1)[0];
     }
 
-    const exitDistance = pathLength(from, exitCell);
-    return Number.isFinite(exitDistance) ? total + exitDistance : Infinity;
+    const exitPath = bfs(from, exitCell, blocked);
+    if (!exitPath.length) return [];
+    route.push(...exitPath.slice(1));
+    return route;
+  }
+
+  function virtualSnakeStep(segments, target, length) {
+    const path = bfs(segments[0], target);
+    const next = path.length > 1 ? path[1] : segments[0];
+    const moved = [{ r: next.r, c: next.c }];
+    for (let index = 1; index < length; index++) {
+      moved.push({ ...segments[Math.min(index - 1, segments.length - 1)] });
+    }
+    return moved;
+  }
+
+  function routeSurvivesSnake(start, snakeStart, exitCell, levelItems, blocked) {
+    const route = bestCollectionRoute(start, exitCell, levelItems, blocked);
+    if (!route.length) return false;
+
+    const itemCells = new Set(levelItems.map(item => key(item.r, item.c)));
+    const snakeLength = Math.min(LEVEL_COUNT + 2, currentLevel + 2);
+    let virtualSnake = Array.from({ length: snakeLength }, () => ({ ...snakeStart }));
+    let virtualPlayer = { ...start };
+    let graceSteps = Math.max(8, 14 - currentLevel);
+    const playerStepsPerSnakeMove = currentLevel <= 3 ? 4 : currentLevel <= 7 ? 3 : 2;
+    let playerSteps = 0;
+
+    for (const nextCell of route) {
+      virtualPlayer = { ...nextCell };
+      if (virtualSnake.some(segment => segment.r === virtualPlayer.r && segment.c === virtualPlayer.c)) {
+        return false;
+      }
+
+      if (itemCells.has(key(virtualPlayer.r, virtualPlayer.c))) {
+        graceSteps += 2;
+        itemCells.delete(key(virtualPlayer.r, virtualPlayer.c));
+      }
+
+      if (graceSteps > 0) {
+        graceSteps--;
+        continue;
+      }
+
+      playerSteps++;
+      if (playerSteps >= playerStepsPerSnakeMove) {
+        playerSteps = 0;
+        virtualSnake = virtualSnakeStep(virtualSnake, virtualPlayer, snakeLength);
+        if (virtualSnake.some(segment => segment.r === virtualPlayer.r && segment.c === virtualPlayer.c)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   }
 
   function levelFeelsReachable(start, snakeStart, exitCell, levelItems) {
     if (!levelItems.length) return false;
 
+    const snakeDistances = distanceMap(snakeStart);
+    const playerDistances = distanceMap(start);
+    const snakeSafetyRadius = Math.max(3, 6 - Math.floor((currentLevel - 1) / 3));
+    const blocked = new Set();
+
+    snakeDistances.forEach((distance, cellKey) => {
+      if (distance <= snakeSafetyRadius) blocked.add(cellKey);
+    });
+    blocked.delete(key(start.r, start.c));
+
     for (const item of levelItems) {
-      if (!Number.isFinite(pathLength(start, item))) return false;
+      if (!Number.isFinite(pathLength(start, item, blocked))) return false;
     }
-    if (!Number.isFinite(pathLength(start, exitCell))) return false;
+    if (!Number.isFinite(pathLength(start, exitCell, blocked))) return false;
 
-    const bestRoute = bestCollectionRouteLength(start, exitCell, levelItems);
-    const snakeToPlayer = pathLength(snakeStart, start);
+    const route = bestCollectionRoute(start, exitCell, levelItems, blocked);
+    if (!route.length) return false;
 
-    const maximumRoute = 18 + levelItems.length * 10;
-    return Number.isFinite(bestRoute)
-      && bestRoute <= maximumRoute
-      && snakeToPlayer >= 10;
+    const firstItemDistance = Math.min(...levelItems.map(item => pathLength(start, item, blocked)));
+    const startKey = key(start.r, start.c);
+    const snakeToPlayer = snakeDistances.has(startKey) ? snakeDistances.get(startKey) : Infinity;
+    const maximumRoute = 30 + levelItems.length * 12;
+
+    return route.length <= maximumRoute
+      && firstItemDistance <= 14
+      && snakeToPlayer >= 12
+      && levelItems.every(item => {
+        const itemKey = key(item.r, item.c);
+        const playerDistance = playerDistances.has(itemKey) ? playerDistances.get(itemKey) : Infinity;
+        const snakeDistance = snakeDistances.has(itemKey) ? snakeDistances.get(itemKey) : -Infinity;
+        const requiredLead = Math.max(3, 7 - Math.floor((currentLevel - 1) / 3));
+        return snakeDistance - playerDistance >= requiredLead;
+      })
+      && routeSurvivesSnake(start, snakeStart, exitCell, levelItems, blocked);
+  }
+
+  function buildSafeFallback(types, playerStart, snakeStart) {
+    maze = Array.from({ length: ROWS }, (_, r) => (
+      Array.from({ length: COLS }, (_, c) => (
+        r === 0 || r === ROWS - 1 || c === 0 || c === COLS - 1 ? 1 : 0
+      ))
+    ));
+
+    // Una barrera con apertura superior retrasa a la víbora y garantiza
+    // varias rutas para el jugador si la generación aleatoria no supera la validación.
+    for (let r = 2; r < ROWS - 1; r++) maze[r][COLS - 4] = 1;
+    const pillars = [
+      [14,4], [12,2], [12,6], [10,4], [8,2],
+      [8,6], [6,4], [4,2], [4,6], [2,4]
+    ];
+    for (const [r, c] of pillars) maze[r][c] = 1;
+
+    maze[playerStart.r][playerStart.c] = 0;
+    maze[snakeStart.r][snakeStart.c] = 0;
+    maze[0][1] = 0;
+    exit = { r: 0, c: 1, open: false };
+
+    const positions = [
+      {r:15,c:3}, {r:13,c:1}, {r:15,c:5}, {r:13,c:5},
+      {r:11,c:3}, {r:15,c:7}, {r:9,c:1}, {r:11,c:7},
+      {r:7,c:3}, {r:5,c:7}, {r:3,c:3}, {r:1,c:7}
+    ];
+    items = types.map((type, index) => ({ ...positions[index], type, collected: false }));
   }
 
   function buildLevel() {
@@ -945,10 +1108,11 @@
     const snakeStart = { r: ROWS - 2, c: COLS - 2 };
     activeTypes = VERIFICATION_ORDER.slice(0, currentLevel + 2);
     const types = activeTypes;
+    savedSnakeLength = Math.max(3, Math.min(savedSnakeLength, currentLevel + 2));
 
     let built = false;
 
-    for (let attempt = 0; attempt < 80 && !built; attempt++) {
+    for (let attempt = 0; attempt < 160 && !built; attempt++) {
       const generated = generateMaze();
       maze = generated.grid;
       const trialExit = { r: 0, c: generated.exitCol, open: false };
@@ -960,20 +1124,27 @@
         key(1, trialExit.c)
       ]);
 
+      const playerDistances = distanceMap(playerStart);
+      const snakeDistances = distanceMap(snakeStart);
+      const requiredLead = Math.max(3, 7 - Math.floor((currentLevel - 1) / 3));
+
       let candidates = openCells(excluded).filter(cell => {
-        const playerDistance = Math.abs(cell.r - playerStart.r) + Math.abs(cell.c - playerStart.c);
-        const snakeDistance = Math.abs(cell.r - snakeStart.r) + Math.abs(cell.c - snakeStart.c);
-        return playerDistance >= 4 && snakeDistance >= 3;
+        const cellKey = key(cell.r, cell.c);
+        const playerDistance = playerDistances.has(cellKey) ? playerDistances.get(cellKey) : Infinity;
+        const snakeDistance = snakeDistances.has(cellKey) ? snakeDistances.get(cellKey) : -Infinity;
+        return playerDistance >= 3
+          && snakeDistance >= 8
+          && snakeDistance - playerDistance >= requiredLead;
       });
-      if (candidates.length < types.length) candidates = openCells(excluded);
+
       if (candidates.length < types.length) continue;
 
       const pool = [...candidates];
       const trialItems = [];
       for (const type of types) {
-        const idx = randomInt(pool.length);
-        const pos = pool.splice(idx, 1)[0];
-        trialItems.push({ ...pos, type, collected: false });
+        const index = randomInt(pool.length);
+        const position = pool.splice(index, 1)[0];
+        trialItems.push({ ...position, type, collected: false });
       }
 
       if (levelFeelsReachable(playerStart, snakeStart, trialExit, trialItems)) {
@@ -984,30 +1155,20 @@
     }
 
     if (!built) {
-      const generated = generateMaze();
-      maze = generated.grid;
-      exit = { r: 0, c: generated.exitCol, open: false };
-      const excluded = new Set([
-        key(playerStart.r, playerStart.c),
-        key(snakeStart.r, snakeStart.c),
-        key(exit.r, exit.c),
-        key(1, exit.c)
-      ]);
-      const fallback = openCells(excluded);
-      items = types.map((type, idx) => ({ ...fallback[Math.min(idx, fallback.length - 1)], type, collected: false }));
+      buildSafeFallback(types, playerStart, snakeStart);
     }
 
     player = { ...playerStart };
     snake = [];
-    for (let i = 0; i < savedSnakeLength; i++) {
+    for (let index = 0; index < savedSnakeLength; index++) {
       snake.push({ r: snakeStart.r, c: snakeStart.c });
     }
 
     collected = new Set();
     elapsed = 0;
     snakeTimer = 0;
-    snakeInterval = Math.max(470, 560 - (currentLevel - 1) * 10);
-    graceUntil = performance.now() + 2200;
+    snakeInterval = Math.max(610, 900 - (currentLevel - 1) * 32);
+    graceUntil = performance.now() + Math.max(3000, 4300 - (currentLevel - 1) * 120);
     gameState = 'playing';
     startTime = performance.now();
     updateLevelIntro();
@@ -1096,7 +1257,7 @@
     ui.itemOverlay.classList.add('hidden');
     gameState = 'playing';
     startTime = performance.now() - elapsed * 1000;
-    graceUntil = Math.max(graceUntil, performance.now() + 650);
+    graceUntil = Math.max(graceUntil, performance.now() + 900);
     canvas.focus({ preventScroll: true });
   }
 
@@ -1136,12 +1297,12 @@
     if (gameState !== 'playing') return;
     gameState = 'won';
     elapsed = (performance.now() - startTime) / 1000;
-    savedSnakeLength = Math.min(100, savedSnakeLength + 1);
+    savedSnakeLength = Math.min(LEVEL_COUNT + 2, savedSnakeLength + 1);
     safeStorageSet('fakesnake_snake_length', String(savedSnakeLength));
     ui.messageIcon.textContent = '✅';
     ui.messageTitle.textContent = '¡Nivel superado!';
     ui.messageText.textContent = `Fuiste más rápido que la desinformación porque reuniste los ${activeTypes.length} elementos de verificación antes de salir.`;
-    ui.messageStats.textContent = `Completaste el nivel ${currentLevel} en ${elapsed.toFixed(1)} s. La víbora creció a ${savedSnakeLength} segmentos.`;
+    ui.messageStats.textContent = `Completaste el nivel ${currentLevel} en ${elapsed.toFixed(1)} s. La víbora tiene ${savedSnakeLength} segmentos.`;
     if (currentLevel < LEVEL_COUNT) {
       resultAction = 'next';
       ui.retryBtn.textContent = 'Siguiente nivel';
