@@ -458,7 +458,7 @@
       <aside class="side">
         <div class="instructions-panel">
           <h2>Misión</h2>
-          <p>Escapa de la víbora de la mentira verificando la publicación original antes de confiar en un contenido.</p>
+          <p id="missionText">Nivel 1. Revisar la fuente. ¿Es confiable, dudosa o inexistente?</p>
 
           <div class="objective">
             <strong>Elementos de verificación</strong>
@@ -596,10 +596,24 @@
     'Detecta la IA'
   ];
 
+  const LEVEL_MISSIONS = [
+    'Revisar la fuente. ¿Es confiable, dudosa o inexistente?',
+    'Buscar contexto. ¿La información está completa o fuera de contexto?',
+    'Contrastar antes de compartir. ¿Otras fuentes confirman o contradicen?',
+    'Distinguir dato de interpretación. ¿Es un hecho, una opinión o una inferencia?',
+    'Sátira. Es un contenido humorístico o exagerado que no pretende informar literalmente.',
+    'Engañoso. Mezcla elementos ciertos con distorsiones u omisiones.',
+    'Cierto. Existe evidencia suficiente y consistente.',
+    'Inverificable. No hay evidencia suficiente para confirmar ni refutar.',
+    'Impreciso. El núcleo de la información es válido, pero contiene errores o datos incompletos.',
+    'Contenido fabricado. Se elaboró con la intención de desinformar.'
+  ];
+
   const ui = {
     startOverlay: document.getElementById('startOverlay'),
     startLevelTitle: document.getElementById('startLevelTitle'),
     startLevelText: document.getElementById('startLevelText'),
+    missionText: document.getElementById('missionText'),
     itemOverlay: document.getElementById('itemOverlay'),
     itemIcon: document.getElementById('itemIcon'),
     itemTitle: document.getElementById('itemTitle'),
@@ -887,6 +901,7 @@
     const labels = activeTypes.map(type => VERIFICATION_ITEMS[type].label);
     ui.startLevelTitle.textContent = `Nivel ${currentLevel} · ${LEVEL_TITLES[currentLevel - 1]}`;
     ui.startLevelText.textContent = `Recoge ${joinLabels(labels)}. La salida se abrirá cuando completes los ${activeTypes.length} elementos.`;
+    ui.missionText.textContent = `Nivel ${currentLevel}. ${LEVEL_MISSIONS[currentLevel - 1]}`;
   }
 
   function updateUI() {
