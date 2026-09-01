@@ -3118,12 +3118,293 @@
     }
   }
 
+  function drawCityWindows(x, y, r, c) {
+    ctx.save();
+    for (let i = 0; i < 5; i++) {
+      const lit = jungleSeed(r, c, 240 + i) > .28;
+      ctx.fillStyle = lit ? (i % 2 ? '#ffd35a' : '#ff9f2f') : '#152438';
+      ctx.shadowColor = lit ? '#ffb32e' : 'transparent';
+      ctx.shadowBlur = lit ? 5 : 0;
+      roundedRectPath(
+        x + TILE * (.12 + i * .155),
+        y + TILE * .78,
+        TILE * .095,
+        TILE * .095,
+        TILE * .018
+      );
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawCityRooftopUnit(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = '#9aa7af';
+    ctx.strokeStyle = '#29343d';
+    ctx.lineWidth = Math.max(1, scale * .035);
+    for (let i = 0; i < 2; i++) {
+      const x = (i ? .08 : -.36) * scale;
+      roundedRectPath(x, -scale * .25, scale * .29, scale * .42, scale * .035);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x + scale * .145, -scale * .04, scale * .085, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x + scale * .08, -scale * .04);
+      ctx.lineTo(x + scale * .21, -scale * .04);
+      ctx.moveTo(x + scale * .145, -scale * .11);
+      ctx.lineTo(x + scale * .145, scale * .03);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawCitySolarPanels(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(-.08);
+    for (let panel = 0; panel < 2; panel++) {
+      const px = (panel ? .05 : -.37) * scale;
+      const py = -scale * .25;
+      ctx.fillStyle = '#174a82';
+      ctx.strokeStyle = '#8db7db';
+      ctx.lineWidth = Math.max(1, scale * .025);
+      ctx.fillRect(px, py, scale * .32, scale * .50);
+      ctx.strokeRect(px, py, scale * .32, scale * .50);
+      ctx.beginPath();
+      ctx.moveTo(px + scale * .16, py);
+      ctx.lineTo(px + scale * .16, py + scale * .50);
+      for (let row = 1; row < 3; row++) {
+        ctx.moveTo(px, py + row * scale * .165);
+        ctx.lineTo(px + scale * .32, py + row * scale * .165);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawCityTreeCluster(cx, cy, scale, r, c) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    for (let i = 0; i < 3; i++) {
+      const tx = (i - 1) * scale * .25 + (jungleSeed(r, c, 250 + i) - .5) * scale * .08;
+      const ty = (i % 2 ? -.10 : .12) * scale;
+      ctx.fillStyle = '#493318';
+      ctx.fillRect(tx - scale * .025, ty + scale * .10, scale * .05, scale * .20);
+      const crown = ctx.createRadialGradient(tx - scale * .05, ty - scale * .06, scale * .02, tx, ty, scale * .19);
+      crown.addColorStop(0, '#91d83c');
+      crown.addColorStop(.55, '#4d9e25');
+      crown.addColorStop(1, '#1d551f');
+      ctx.fillStyle = crown;
+      ctx.beginPath();
+      ctx.arc(tx, ty, scale * .18, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawCityHelipad(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = '#3d4651';
+    ctx.strokeStyle = '#b7c8d2';
+    ctx.lineWidth = Math.max(1.5, scale * .045);
+    ctx.beginPath();
+    ctx.arc(0, 0, scale * .38, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#e8f4f5';
+    ctx.font = `900 ${scale * .52}px system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('H', 0, scale * .02);
+    ctx.restore();
+  }
+
+  function drawCityWaterTank(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = '#b6bcc1';
+    ctx.strokeStyle = '#4b555e';
+    ctx.lineWidth = Math.max(1, scale * .035);
+    roundedRectPath(-scale * .27, -scale * .22, scale * .54, scale * .44, scale * .10);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#dfe5e8';
+    ctx.beginPath();
+    ctx.ellipse(0, -scale * .21, scale * .27, scale * .10, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = '#68737b';
+    for (let i = -1; i <= 1; i++) {
+      ctx.beginPath();
+      ctx.moveTo(i * scale * .15, -scale * .15);
+      ctx.lineTo(i * scale * .15, scale * .18);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawCityCars(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const colors = ['#ee493b', '#2d9be8'];
+    for (let i = 0; i < 2; i++) {
+      const x = (i ? .12 : -.30) * scale;
+      const y = (i ? .02 : -.24) * scale;
+      ctx.fillStyle = colors[i];
+      roundedRectPath(x, y, scale * .20, scale * .38, scale * .055);
+      ctx.fill();
+      ctx.fillStyle = '#bfe8f6';
+      roundedRectPath(x + scale * .035, y + scale * .075, scale * .13, scale * .10, scale * .025);
+      ctx.fill();
+      ctx.fillStyle = '#111820';
+      ctx.fillRect(x - scale * .025, y + scale * .08, scale * .025, scale * .08);
+      ctx.fillRect(x + scale * .20, y + scale * .08, scale * .025, scale * .08);
+      ctx.fillRect(x - scale * .025, y + scale * .24, scale * .025, scale * .08);
+      ctx.fillRect(x + scale * .20, y + scale * .24, scale * .025, scale * .08);
+    }
+    ctx.restore();
+  }
+
+  function drawCityAntenna(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.strokeStyle = '#aebbc6';
+    ctx.lineWidth = Math.max(1.2, scale * .035);
+    ctx.beginPath();
+    ctx.moveTo(0, scale * .38);
+    ctx.lineTo(0, -scale * .30);
+    ctx.moveTo(-scale * .16, scale * .38);
+    ctx.lineTo(0, -scale * .18);
+    ctx.lineTo(scale * .16, scale * .38);
+    ctx.stroke();
+    ctx.fillStyle = '#40b9ee';
+    ctx.beginPath();
+    ctx.arc(0, -scale * .34, scale * .065, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.save();
+    ctx.strokeStyle = 'rgba(78,204,255,.58)';
+    for (let i = 1; i <= 2; i++) {
+      ctx.beginPath();
+      ctx.arc(0, -scale * .34, scale * (.14 + i * .09), -1.1, 1.1);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.restore();
+  }
+
+  function drawCityWallTile(x, y, r, c) {
+    const pad = TILE * .045;
+    const size = TILE - pad * 2;
+    const tone = Math.floor(jungleSeed(r, c, 235) * 3);
+    const palettes = [
+      ['#65717d', '#323b45', '#151b22'],
+      ['#56616d', '#29323d', '#12171e'],
+      ['#74808a', '#3a414a', '#171b21']
+    ][tone];
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.72)';
+    ctx.shadowBlur = TILE * .17;
+    ctx.shadowOffsetY = TILE * .09;
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .11);
+    const base = ctx.createLinearGradient(x, y, x + TILE, y + TILE);
+    base.addColorStop(0, palettes[0]);
+    base.addColorStop(.48, palettes[1]);
+    base.addColorStop(1, palettes[2]);
+    ctx.fillStyle = base;
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .11);
+    ctx.clip();
+
+    ctx.fillStyle = 'rgba(255,255,255,.065)';
+    ctx.beginPath();
+    ctx.ellipse(x + TILE * .34, y + TILE * .14, TILE * .29, TILE * .08, -.12, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(12,18,24,.72)';
+    ctx.lineWidth = Math.max(1, TILE * .025);
+    roundedRectPath(x + TILE * .10, y + TILE * .09, TILE * .80, TILE * .62, TILE * .05);
+    ctx.stroke();
+
+    drawCityWindows(x, y, r, c);
+
+    const motifSeed = jungleSeed(r, c, 236);
+    let motif = Math.floor(motifSeed * 7);
+    if (r === 0 && c === 2) motif = 0;
+    else if (r === 0 && c === 4) motif = 1;
+    else if (r === 0 && c === 6) motif = 2;
+    else if (r === 0 && c === 8) motif = 3;
+    else if (r === 0 && c === 10) motif = 4;
+    else if (r === 5 && c === 0) motif = 5;
+    else if (r === 8 && c === COLS - 1) motif = 6;
+
+    const cx = x + TILE * .50;
+    const cy = y + TILE * .40;
+    if (motif === 0) {
+      drawCityRooftopUnit(cx, cy, TILE * .74);
+    } else if (motif === 1) {
+      drawCitySolarPanels(cx, cy, TILE * .72);
+    } else if (motif === 2) {
+      drawCityTreeCluster(cx, cy, TILE * .70, r, c);
+    } else if (motif === 3) {
+      drawCityHelipad(cx, cy, TILE * .66);
+    } else if (motif === 4) {
+      drawCityWaterTank(cx, cy, TILE * .68);
+    } else if (motif === 5) {
+      drawCityCars(cx, cy, TILE * .68);
+    } else {
+      drawCityAntenna(cx, cy, TILE * .64);
+    }
+
+    ctx.restore();
+
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .11);
+    ctx.strokeStyle = 'rgba(174,193,207,.30)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  function drawCityFloorTile(x, y, r, c) {
+    const floor = ctx.createLinearGradient(x, y, x + TILE, y + TILE);
+    floor.addColorStop(0, (r + c) % 2 ? '#0b1014' : '#10171c');
+    floor.addColorStop(.58, '#020404');
+    floor.addColorStop(1, '#0a0e12');
+    ctx.fillStyle = floor;
+    ctx.fillRect(x, y, TILE, TILE);
+
+    ctx.strokeStyle = 'rgba(104,128,143,.075)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + .5, y + .5, TILE - 1, TILE - 1);
+
+    if ((r * 11 + c * 7) % 13 === 0) {
+      ctx.strokeStyle = 'rgba(255,211,91,.18)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x + TILE * .38, y + TILE * .50);
+      ctx.lineTo(x + TILE * .62, y + TILE * .50);
+      ctx.stroke();
+    } else if ((r * 5 + c * 17) % 19 === 0) {
+      ctx.fillStyle = 'rgba(92,184,222,.20)';
+      ctx.beginPath();
+      ctx.arc(x + TILE * .22, y + TILE * .24, 1.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
   function drawAmbient(now) {
     const jungle = currentLevel === 1;
     const volcanic = currentLevel === 2;
     const desert = currentLevel === 3;
     const marine = currentLevel === 4;
     const sky = currentLevel === 5;
+    const city = currentLevel === 6;
     ctx.save();
     for (let i = 0; i < 18; i++) {
       const seedX = (i * 97) % canvas.width;
@@ -3148,6 +3429,11 @@
         ctx.fillStyle = i % 3 === 0
           ? `rgba(255,255,255,${alpha * 1.60})`
           : `rgba(165,225,247,${alpha * 1.25})`;
+      } else if (city) {
+        const cityPulse = alpha * (1.25 + Math.sin(now * .004 + i) * .24);
+        ctx.fillStyle = i % 3 === 0
+          ? `rgba(255,196,68,${cityPulse})`
+          : `rgba(84,183,230,${cityPulse * .82})`;
       } else {
         ctx.fillStyle = `rgba(32,245,229,${alpha})`;
       }
@@ -3157,9 +3443,9 @@
       const bubbleLift = marine ? ((now * .013 + i * 31) % 48) : 0;
       const skyDrift = sky ? ((now * .008 + i * 19) % 56) : 0;
       ctx.arc(
-        seedX + drift + sandDrift + skyDrift + (marine ? Math.sin(now * .0012 + i) * 5 : 0),
-        seedY - drift * .4 - emberLift - bubbleLift + (desert ? Math.sin(now * .001 + i) * 3 : 0) + (sky ? Math.sin(now * .0009 + i) * 4 : 0),
-        volcanic ? 1 + (i % 2) : desert ? .9 + (i % 3) * .45 : marine ? 1.1 + (i % 3) * .55 : sky ? 1.3 + (i % 3) * .50 : 1.5 + (i % 3),
+        city ? seedX : seedX + drift + sandDrift + skyDrift + (marine ? Math.sin(now * .0012 + i) * 5 : 0),
+        city ? seedY : seedY - drift * .4 - emberLift - bubbleLift + (desert ? Math.sin(now * .001 + i) * 3 : 0) + (sky ? Math.sin(now * .0009 + i) * 4 : 0),
+        volcanic ? 1 + (i % 2) : desert ? .9 + (i % 3) * .45 : marine ? 1.1 + (i % 3) * .55 : sky ? 1.3 + (i % 3) * .50 : city ? .9 + (i % 2) * .6 : 1.5 + (i % 3),
         0,
         Math.PI * 2
       );
@@ -3242,6 +3528,7 @@
     const desert = currentLevel === 3;
     const marine = currentLevel === 4;
     const sky = currentLevel === 5;
+    const city = currentLevel === 6;
     const boardGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
     if (jungle) {
       boardGradient.addColorStop(0, '#06140b');
@@ -3263,6 +3550,10 @@
       boardGradient.addColorStop(0, '#071a2a');
       boardGradient.addColorStop(.52, '#010507');
       boardGradient.addColorStop(1, '#0a2638');
+    } else if (city) {
+      boardGradient.addColorStop(0, '#12181e');
+      boardGradient.addColorStop(.52, '#020404');
+      boardGradient.addColorStop(1, '#17212a');
     } else {
       boardGradient.addColorStop(0, '#020a0a');
       boardGradient.addColorStop(.55, '#000404');
@@ -3286,6 +3577,8 @@
             drawMarineWallTile(x, y, r, c);
           } else if (sky) {
             drawSkyWallTile(x, y, r, c);
+          } else if (city) {
+            drawCityWallTile(x, y, r, c);
           } else {
             drawDefaultWallTile(x, y);
           }
@@ -3299,6 +3592,8 @@
           drawMarineFloorTile(x, y, r, c);
         } else if (sky) {
           drawSkyFloorTile(x, y, r, c);
+        } else if (city) {
+          drawCityFloorTile(x, y, r, c);
         } else {
           drawDefaultFloorTile(x, y, r, c);
         }
