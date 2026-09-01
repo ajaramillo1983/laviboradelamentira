@@ -3111,11 +3111,290 @@
     }
   }
 
+  function drawSkyCloud(cx, cy, scale, variant = 0) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const cloud = ctx.createLinearGradient(0, -scale * .34, 0, scale * .31);
+    cloud.addColorStop(0, '#ffffff');
+    cloud.addColorStop(.58, '#e7f6ff');
+    cloud.addColorStop(1, '#9ed3ee');
+    ctx.fillStyle = cloud;
+    ctx.shadowColor = 'rgba(233,250,255,.45)';
+    ctx.shadowBlur = scale * .12;
+
+    const offsets = variant % 2
+      ? [[-.28,.05,.22],[-.08,-.10,.29],[.18,-.03,.24],[.34,.09,.18]]
+      : [[-.30,.08,.21],[-.12,-.06,.27],[.10,-.14,.31],[.32,.05,.22]];
+    ctx.beginPath();
+    for (const [ox, oy, radius] of offsets) {
+      ctx.moveTo((ox + radius) * scale, oy * scale);
+      ctx.arc(ox * scale, oy * scale, radius * scale, 0, Math.PI * 2);
+    }
+    ctx.fill();
+    ctx.fillRect(-scale * .45, scale * .04, scale * .90, scale * .25);
+
+    ctx.strokeStyle = 'rgba(76,148,194,.34)';
+    ctx.lineWidth = Math.max(1, scale * .025);
+    ctx.beginPath();
+    ctx.moveTo(-scale * .38, scale * .28);
+    ctx.quadraticCurveTo(0, scale * .34, scale * .38, scale * .27);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawSkySun(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.strokeStyle = '#df8e12';
+    ctx.lineWidth = Math.max(1.2, scale * .05);
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 10; i++) {
+      const angle = (Math.PI * 2 * i) / 10;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(angle) * scale * .24, Math.sin(angle) * scale * .24);
+      ctx.lineTo(Math.cos(angle) * scale * .39, Math.sin(angle) * scale * .39);
+      ctx.stroke();
+    }
+    const sun = ctx.createRadialGradient(-scale * .07, -scale * .08, scale * .02, 0, 0, scale * .25);
+    sun.addColorStop(0, '#fff7a9');
+    sun.addColorStop(.52, '#ffd23d');
+    sun.addColorStop(1, '#f39b17');
+    ctx.fillStyle = sun;
+    ctx.beginPath();
+    ctx.arc(0, 0, scale * .23, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawSkyRainbow(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.lineCap = 'round';
+    const colors = ['#ff6c78', '#ffc83e', '#69d16f', '#4aa7f0', '#a96ae7'];
+    for (let i = 0; i < colors.length; i++) {
+      ctx.strokeStyle = colors[i];
+      ctx.lineWidth = Math.max(1.8, scale * .065);
+      ctx.beginPath();
+      ctx.arc(0, scale * .23, scale * (.42 - i * .065), Math.PI, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawSkyBird(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = '#ffd25b';
+    ctx.strokeStyle = '#b77417';
+    ctx.lineWidth = Math.max(1, scale * .032);
+
+    ctx.beginPath();
+    ctx.ellipse(0, scale * .06, scale * .27, scale * .16, -.12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(-scale * .02, 0);
+    ctx.quadraticCurveTo(-scale * .22, -scale * .36, -scale * .42, -scale * .18);
+    ctx.quadraticCurveTo(-scale * .22, -scale * .06, 0, scale * .06);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(scale * .24, scale * .01);
+    ctx.lineTo(scale * .42, scale * .08);
+    ctx.lineTo(scale * .25, scale * .15);
+    ctx.closePath();
+    ctx.fillStyle = '#f29b29';
+    ctx.fill();
+
+    ctx.fillStyle = '#152536';
+    ctx.beginPath();
+    ctx.arc(scale * .15, 0, scale * .025, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawSkyBalloon(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const balloon = ctx.createLinearGradient(-scale * .26, -scale * .36, scale * .25, scale * .31);
+    balloon.addColorStop(0, '#fff2a7');
+    balloon.addColorStop(.30, '#ff9b43');
+    balloon.addColorStop(.58, '#f55556');
+    balloon.addColorStop(1, '#4c99e8');
+    ctx.fillStyle = balloon;
+    ctx.beginPath();
+    ctx.ellipse(0, -scale * .08, scale * .30, scale * .37, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255,255,255,.72)';
+    ctx.lineWidth = Math.max(1, scale * .028);
+    ctx.beginPath();
+    ctx.moveTo(-scale * .09, -scale * .40);
+    ctx.quadraticCurveTo(-scale * .18, -scale * .08, -scale * .07, scale * .27);
+    ctx.moveTo(scale * .09, -scale * .40);
+    ctx.quadraticCurveTo(scale * .18, -scale * .08, scale * .07, scale * .27);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#7d5b3f';
+    ctx.beginPath();
+    ctx.moveTo(-scale * .08, scale * .26);
+    ctx.lineTo(-scale * .05, scale * .40);
+    ctx.moveTo(scale * .08, scale * .26);
+    ctx.lineTo(scale * .05, scale * .40);
+    ctx.stroke();
+    ctx.fillStyle = '#9a6330';
+    ctx.fillRect(-scale * .10, scale * .38, scale * .20, scale * .12);
+    ctx.restore();
+  }
+
+  function drawSkyWind(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.strokeStyle = 'rgba(239,252,255,.88)';
+    ctx.lineWidth = Math.max(1.4, scale * .055);
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 3; i++) {
+      const y = (i - 1) * scale * .20;
+      ctx.beginPath();
+      ctx.moveTo(-scale * .42, y);
+      ctx.bezierCurveTo(-scale * .12, y - scale * .12, scale * .28, y - scale * .10, scale * .34, y);
+      ctx.bezierCurveTo(scale * .39, y + scale * .10, scale * .22, y + scale * .14, scale * .14, y + scale * .06);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawSkyFeather(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(-.55);
+    ctx.fillStyle = 'rgba(255,255,255,.88)';
+    ctx.strokeStyle = '#a5d4ed';
+    ctx.lineWidth = Math.max(1, scale * .03);
+    ctx.beginPath();
+    ctx.moveTo(0, -scale * .42);
+    ctx.bezierCurveTo(scale * .30, -scale * .18, scale * .25, scale * .19, 0, scale * .40);
+    ctx.bezierCurveTo(-scale * .23, scale * .13, -scale * .28, -scale * .18, 0, -scale * .42);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0, -scale * .36);
+    ctx.lineTo(0, scale * .44);
+    ctx.stroke();
+    for (let i = -2; i <= 2; i++) {
+      const y = i * scale * .12;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo((i % 2 ? 1 : -1) * scale * .20, y - scale * .12);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawSkyWallTile(x, y, r, c) {
+    const pad = TILE * .045;
+    const size = TILE - pad * 2;
+    const tone = Math.floor(jungleSeed(r, c, 215) * 3);
+    const palettes = [
+      ['#9be7ff', '#48b8ed', '#1a71b4'],
+      ['#b7efff', '#57c1ee', '#267bbd'],
+      ['#81ddff', '#39aee5', '#1764a6']
+    ][tone];
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(104,216,255,.38)';
+    ctx.shadowBlur = TILE * .17;
+    ctx.shadowOffsetY = TILE * .07;
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .16);
+    const base = ctx.createLinearGradient(x, y, x + TILE, y + TILE);
+    base.addColorStop(0, palettes[0]);
+    base.addColorStop(.48, palettes[1]);
+    base.addColorStop(1, palettes[2]);
+    ctx.fillStyle = base;
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .16);
+    ctx.clip();
+
+    ctx.fillStyle = 'rgba(255,255,255,.24)';
+    ctx.beginPath();
+    ctx.ellipse(x + TILE * .34, y + TILE * .15, TILE * .30, TILE * .095, -.18, 0, Math.PI * 2);
+    ctx.fill();
+
+    const motifSeed = jungleSeed(r, c, 216);
+    let motif = Math.floor(motifSeed * 7);
+    if (r === 0 && c === 2) motif = 0;
+    else if (r === 0 && c === 4) motif = 1;
+    else if (r === 0 && c === 6) motif = 2;
+    else if (r === 0 && c === 8) motif = 3;
+    else if (r === 0 && c === 10) motif = 4;
+    else if (r === 5 && c === 0) motif = 5;
+    else if (r === 8 && c === COLS - 1) motif = 6;
+
+    const cx = x + TILE * .50;
+    const cy = y + TILE * .48;
+    if (motif === 0) {
+      drawSkySun(cx, cy - TILE * .06, TILE * .72);
+      drawSkyCloud(cx, y + TILE * .76, TILE * .44, r + c);
+    } else if (motif === 1) {
+      drawSkyRainbow(cx, cy + TILE * .06, TILE * .76);
+      drawSkyCloud(cx, y + TILE * .73, TILE * .42, r + c);
+    } else if (motif === 2) {
+      drawSkyBird(cx, cy, TILE * .78);
+      drawSkyCloud(cx - TILE * .15, y + TILE * .78, TILE * .35, r + c);
+    } else if (motif === 3) {
+      drawSkyBalloon(cx, cy, TILE * .70);
+    } else if (motif === 4) {
+      drawSkyWind(cx, cy, TILE * .78);
+    } else if (motif === 5) {
+      drawSkyFeather(cx, cy, TILE * .72);
+    } else {
+      drawSkyCloud(cx, cy + TILE * .10, TILE * .78, r + c);
+    }
+
+    ctx.restore();
+
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .16);
+    ctx.strokeStyle = 'rgba(226,250,255,.48)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  function drawSkyFloorTile(x, y, r, c) {
+    const floor = ctx.createLinearGradient(x, y, x + TILE, y + TILE);
+    floor.addColorStop(0, (r + c) % 2 ? '#06111a' : '#081b29');
+    floor.addColorStop(.58, '#010405');
+    floor.addColorStop(1, '#06131e');
+    ctx.fillStyle = floor;
+    ctx.fillRect(x, y, TILE, TILE);
+
+    ctx.strokeStyle = 'rgba(90,188,221,.075)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + .5, y + .5, TILE - 1, TILE - 1);
+
+    const wisp = jungleSeed(r, c, 225);
+    if (wisp > .74) {
+      ctx.strokeStyle = wisp > .92 ? 'rgba(226,249,255,.34)' : 'rgba(106,194,225,.20)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      const wx = x + TILE * (.16 + jungleSeed(r, c, 226) * .46);
+      const wy = y + TILE * (.24 + jungleSeed(r, c, 227) * .50);
+      ctx.moveTo(wx, wy);
+      ctx.quadraticCurveTo(wx + TILE * .18, wy - TILE * .08, wx + TILE * .34, wy);
+      ctx.stroke();
+    }
+  }
+
   function drawAmbient(now) {
     const jungle = currentLevel === 1;
     const volcanic = currentLevel === 2;
     const desert = currentLevel === 3;
     const marine = currentLevel === 4;
+    const sky = currentLevel === 5;
     ctx.save();
     for (let i = 0; i < 18; i++) {
       const seedX = (i * 97) % canvas.width;
@@ -3136,6 +3415,10 @@
         ctx.fillStyle = i % 3 === 0
           ? `rgba(206,250,255,${alpha * 1.45})`
           : `rgba(75,203,238,${alpha * 1.15})`;
+      } else if (sky) {
+        ctx.fillStyle = i % 3 === 0
+          ? `rgba(255,255,255,${alpha * 1.60})`
+          : `rgba(165,225,247,${alpha * 1.25})`;
       } else {
         ctx.fillStyle = `rgba(32,245,229,${alpha})`;
       }
@@ -3143,10 +3426,11 @@
       const emberLift = volcanic ? ((now * .018 + i * 41) % 34) : 0;
       const sandDrift = desert ? ((now * .012 + i * 23) % 42) : 0;
       const bubbleLift = marine ? ((now * .013 + i * 31) % 48) : 0;
+      const skyDrift = sky ? ((now * .008 + i * 19) % 56) : 0;
       ctx.arc(
-        seedX + drift + sandDrift + (marine ? Math.sin(now * .0012 + i) * 5 : 0),
-        seedY - drift * .4 - emberLift - bubbleLift + (desert ? Math.sin(now * .001 + i) * 3 : 0),
-        volcanic ? 1 + (i % 2) : desert ? .9 + (i % 3) * .45 : marine ? 1.1 + (i % 3) * .55 : 1.5 + (i % 3),
+        seedX + drift + sandDrift + skyDrift + (marine ? Math.sin(now * .0012 + i) * 5 : 0),
+        seedY - drift * .4 - emberLift - bubbleLift + (desert ? Math.sin(now * .001 + i) * 3 : 0) + (sky ? Math.sin(now * .0009 + i) * 4 : 0),
+        volcanic ? 1 + (i % 2) : desert ? .9 + (i % 3) * .45 : marine ? 1.1 + (i % 3) * .55 : sky ? 1.3 + (i % 3) * .50 : 1.5 + (i % 3),
         0,
         Math.PI * 2
       );
@@ -3228,6 +3512,7 @@
     const volcanic = currentLevel === 2;
     const desert = currentLevel === 3;
     const marine = currentLevel === 4;
+    const sky = currentLevel === 5;
     const boardGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
     if (jungle) {
       boardGradient.addColorStop(0, '#06140b');
@@ -3245,6 +3530,10 @@
       boardGradient.addColorStop(0, '#031a2b');
       boardGradient.addColorStop(.52, '#010508');
       boardGradient.addColorStop(1, '#042840');
+    } else if (sky) {
+      boardGradient.addColorStop(0, '#071a2a');
+      boardGradient.addColorStop(.52, '#010507');
+      boardGradient.addColorStop(1, '#0a2638');
     } else {
       boardGradient.addColorStop(0, '#020a0a');
       boardGradient.addColorStop(.55, '#000404');
@@ -3266,6 +3555,8 @@
             drawDesertWallTile(x, y, r, c);
           } else if (marine) {
             drawMarineWallTile(x, y, r, c);
+          } else if (sky) {
+            drawSkyWallTile(x, y, r, c);
           } else {
             drawDefaultWallTile(x, y);
           }
@@ -3277,6 +3568,8 @@
           drawDesertFloorTile(x, y, r, c);
         } else if (marine) {
           drawMarineFloorTile(x, y, r, c);
+        } else if (sky) {
+          drawSkyFloorTile(x, y, r, c);
         } else {
           drawDefaultFloorTile(x, y, r, c);
         }
