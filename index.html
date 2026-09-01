@@ -3986,6 +3986,358 @@
     }
   }
 
+  function drawIslandPalm(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.strokeStyle = '#7a461c';
+    ctx.lineWidth = Math.max(2.4, scale * .13);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-scale * .10, scale * .39);
+    ctx.quadraticCurveTo(scale * .04, scale * .08, 0, -scale * .20);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#c7893c';
+    ctx.lineWidth = Math.max(.8, scale * .025);
+    ctx.beginPath();
+    ctx.moveTo(-scale * .13, scale * .34);
+    ctx.quadraticCurveTo(0, scale * .07, -scale * .03, -scale * .18);
+    ctx.stroke();
+
+    const colors = ['#a9df31', '#68b92c', '#3c8c2d', '#c2e546', '#579f26', '#85c72f'];
+    for (let i = 0; i < 6; i++) {
+      const angle = -Math.PI + i * (Math.PI * 2 / 6);
+      ctx.save();
+      ctx.translate(0, -scale * .22);
+      ctx.rotate(angle);
+      ctx.fillStyle = colors[i];
+      ctx.beginPath();
+      ctx.ellipse(scale * .23, 0, scale * .27, scale * .09, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.fillStyle = '#7a431b';
+    ctx.beginPath();
+    ctx.arc(-scale * .10, -scale * .13, scale * .09, 0, Math.PI * 2);
+    ctx.arc(scale * .09, -scale * .12, scale * .09, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawIslandRocks(cx, cy, scale, r, c) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    for (let i = 0; i < 4; i++) {
+      const rockX = (i - 1.5) * scale * .18 + (jungleSeed(r, c, 310 + i) - .5) * scale * .10;
+      const rockY = scale * (.12 - (i % 2) * .11);
+      const rockW = scale * (.25 + jungleSeed(r, c, 315 + i) * .12);
+      const rockH = scale * (.18 + jungleSeed(r, c, 320 + i) * .10);
+      const rock = ctx.createLinearGradient(rockX - rockW / 2, rockY - rockH / 2, rockX + rockW / 2, rockY + rockH / 2);
+      rock.addColorStop(0, '#aeb2a0');
+      rock.addColorStop(1, '#4a5141');
+      ctx.fillStyle = rock;
+      ctx.beginPath();
+      ctx.ellipse(rockX, rockY, rockW / 2, rockH / 2, -.18 + i * .10, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(50,55,42,.70)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#76ad30';
+    ctx.beginPath();
+    ctx.arc(-scale * .22, scale * .03, scale * .07, 0, Math.PI * 2);
+    ctx.arc(scale * .16, -scale * .05, scale * .06, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawIslandFlowers(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const positions = [[-.20,.12],[.05,-.08],[.25,.14]];
+    const colors = ['#ff6585','#ff9d3d','#f15cc0'];
+    for (let i = 0; i < positions.length; i++) {
+      const [x,y]=positions[i];
+      ctx.strokeStyle = '#4d9229';
+      ctx.lineWidth = Math.max(1.2, scale * .035);
+      ctx.beginPath();
+      ctx.moveTo(x * scale, (y + .18) * scale);
+      ctx.lineTo(x * scale, y * scale);
+      ctx.stroke();
+      ctx.fillStyle = colors[i];
+      for (let p = 0; p < 5; p++) {
+        const angle = (Math.PI * 2 * p) / 5;
+        ctx.beginPath();
+        ctx.arc(
+          x * scale + Math.cos(angle) * scale * .075,
+          y * scale + Math.sin(angle) * scale * .075,
+          scale * .06,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+      ctx.fillStyle = '#ffe25e';
+      ctx.beginPath();
+      ctx.arc(x * scale, y * scale, scale * .045, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawIslandShell(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const shell = ctx.createRadialGradient(-scale * .08, -scale * .10, scale * .02, 0, 0, scale * .42);
+    shell.addColorStop(0, '#fff3d1');
+    shell.addColorStop(.52, '#efc987');
+    shell.addColorStop(1, '#a86b48');
+    ctx.fillStyle = shell;
+    ctx.strokeStyle = '#8b5b3b';
+    ctx.lineWidth = Math.max(1, scale * .035);
+    ctx.beginPath();
+    ctx.moveTo(-scale * .38, scale * .25);
+    ctx.bezierCurveTo(-scale * .37, -scale * .18, -scale * .18, -scale * .38, 0, -scale * .40);
+    ctx.bezierCurveTo(scale * .20, -scale * .38, scale * .38, -scale * .18, scale * .38, scale * .25);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(0, -scale * .34);
+      ctx.lineTo(i * scale * .14, scale * .22);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  function drawIslandStarfish(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(.18);
+    ctx.fillStyle = '#ff674a';
+    ctx.strokeStyle = '#b83726';
+    ctx.lineWidth = Math.max(1, scale * .035);
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const angle = -Math.PI / 2 + (Math.PI * 2 * i) / 10;
+      const radius = i % 2 === 0 ? scale * .40 : scale * .17;
+      const px = Math.cos(angle) * radius;
+      const py = Math.sin(angle) * radius;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,219,120,.62)';
+    for (let i = 0; i < 5; i++) {
+      const angle = -Math.PI / 2 + (Math.PI * 2 * i) / 5;
+      ctx.beginPath();
+      ctx.arc(Math.cos(angle) * scale * .22, Math.sin(angle) * scale * .22, scale * .024, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawIslandCrab(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.strokeStyle = '#a92e16';
+    ctx.lineWidth = Math.max(1.4, scale * .05);
+    ctx.lineCap = 'round';
+    for (const side of [-1,1]) {
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(side * scale * .18, (-.08 + i * .10) * scale);
+        ctx.lineTo(side * scale * (.32 + i * .03), (-.18 + i * .20) * scale);
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      ctx.moveTo(side * scale * .22, -scale * .10);
+      ctx.lineTo(side * scale * .38, -scale * .27);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(side * scale * .42, -scale * .30, scale * .10, .2, Math.PI * 1.7);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#e84e25';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, scale * .27, scale * .20, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff6d8';
+    ctx.beginPath();
+    ctx.arc(-scale * .10, -scale * .14, scale * .045, 0, Math.PI * 2);
+    ctx.arc(scale * .10, -scale * .14, scale * .045, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#15100c';
+    ctx.beginPath();
+    ctx.arc(-scale * .10, -scale * .14, scale * .020, 0, Math.PI * 2);
+    ctx.arc(scale * .10, -scale * .14, scale * .020, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawIslandShore(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const water = ctx.createLinearGradient(-scale * .42, -scale * .35, scale * .42, scale * .35);
+    water.addColorStop(0, '#6ff1e4');
+    water.addColorStop(.52, '#20c9d4');
+    water.addColorStop(1, '#087c9e');
+    ctx.fillStyle = water;
+    ctx.beginPath();
+    ctx.moveTo(-scale * .45, -scale * .42);
+    ctx.lineTo(scale * .45, -scale * .42);
+    ctx.lineTo(scale * .45, scale * .10);
+    ctx.bezierCurveTo(scale * .16, scale * .28, -scale * .11, -.02 * scale, -scale * .45, scale * .24);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(244,255,255,.82)';
+    ctx.lineWidth = Math.max(1.4, scale * .045);
+    ctx.beginPath();
+    ctx.moveTo(-scale * .43, scale * .20);
+    ctx.bezierCurveTo(-scale * .10, -.03 * scale, scale * .18, scale * .27, scale * .43, scale * .08);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawIslandDriftwood(cx, cy, scale) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(-.38);
+    ctx.strokeStyle = '#805029';
+    ctx.lineWidth = Math.max(3, scale * .16);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-scale * .38, 0);
+    ctx.lineTo(scale * .38, 0);
+    ctx.stroke();
+    ctx.strokeStyle = '#b57b3c';
+    ctx.lineWidth = Math.max(1, scale * .035);
+    ctx.beginPath();
+    ctx.moveTo(-scale * .32, -scale * .02);
+    ctx.lineTo(scale * .32, -scale * .02);
+    ctx.moveTo(-scale * .10, 0);
+    ctx.lineTo(-scale * .22, -scale * .18);
+    ctx.moveTo(scale * .16, 0);
+    ctx.lineTo(scale * .28, scale * .17);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawIslandWallTile(x, y, r, c) {
+    const pad = TILE * .045;
+    const size = TILE - pad * 2;
+    const tone = Math.floor(jungleSeed(r, c, 305) * 3);
+    const palettes = [
+      ['#ffe28a', '#d9a742', '#8d661d'],
+      ['#f5d173', '#c99435', '#795617'],
+      ['#ffea9b', '#dda94b', '#946c21']
+    ][tone];
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(68,104,28,.34)';
+    ctx.shadowBlur = TILE * .16;
+    ctx.shadowOffsetY = TILE * .08;
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .15);
+    const base = ctx.createLinearGradient(x, y, x + TILE, y + TILE);
+    base.addColorStop(0, palettes[0]);
+    base.addColorStop(.50, palettes[1]);
+    base.addColorStop(1, palettes[2]);
+    ctx.fillStyle = base;
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .15);
+    ctx.clip();
+
+    ctx.fillStyle = 'rgba(255,251,205,.20)';
+    ctx.beginPath();
+    ctx.ellipse(x + TILE * .34, y + TILE * .15, TILE * .29, TILE * .085, -.18, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(102,78,31,.28)';
+    for (let i = 0; i < 4; i++) {
+      ctx.beginPath();
+      ctx.arc(
+        x + TILE * (.13 + jungleSeed(r, c, 330 + i) * .74),
+        y + TILE * (.13 + jungleSeed(r, c, 335 + i) * .70),
+        .9 + (i % 2) * .4,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+    }
+
+    const motifSeed = jungleSeed(r, c, 306);
+    let motif = Math.floor(motifSeed * 8);
+    if (r === 0 && c === 2) motif = 0;
+    else if (r === 0 && c === 4) motif = 1;
+    else if (r === 0 && c === 6) motif = 2;
+    else if (r === 0 && c === 8) motif = 3;
+    else if (r === 0 && c === 10) motif = 4;
+    else if (r === 5 && c === 0) motif = 5;
+    else if (r === 8 && c === COLS - 1) motif = 6;
+    else if (r === ROWS - 1 && c === 10) motif = 7;
+
+    const cx = x + TILE * .50;
+    const cy = y + TILE * .52;
+    if (motif === 0) {
+      drawIslandPalm(cx, cy, TILE * .76);
+    } else if (motif === 1) {
+      drawIslandRocks(cx, cy + TILE * .08, TILE * .78, r, c);
+    } else if (motif === 2) {
+      drawIslandFlowers(cx, cy, TILE * .72);
+    } else if (motif === 3) {
+      drawIslandShell(cx, cy, TILE * .68);
+    } else if (motif === 4) {
+      drawIslandStarfish(cx, cy, TILE * .68);
+    } else if (motif === 5) {
+      drawIslandCrab(cx, cy, TILE * .72);
+    } else if (motif === 6) {
+      drawIslandShore(cx, cy, TILE * .86);
+    } else {
+      drawIslandDriftwood(cx, cy, TILE * .72);
+    }
+
+    ctx.restore();
+
+    roundedRectPath(x + pad, y + pad, size, size, TILE * .15);
+    ctx.strokeStyle = 'rgba(248,230,126,.38)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  function drawIslandFloorTile(x, y, r, c) {
+    const floor = ctx.createLinearGradient(x, y, x + TILE, y + TILE);
+    floor.addColorStop(0, (r + c) % 2 ? '#07130f' : '#0b1d15');
+    floor.addColorStop(.58, '#010403');
+    floor.addColorStop(1, '#07150f');
+    ctx.fillStyle = floor;
+    ctx.fillRect(x, y, TILE, TILE);
+
+    ctx.strokeStyle = 'rgba(72,148,111,.075)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + .5, y + .5, TILE - 1, TILE - 1);
+
+    const detail = jungleSeed(r, c, 345);
+    if (detail > .74) {
+      ctx.fillStyle = detail > .92 ? 'rgba(81,228,211,.36)' : 'rgba(226,193,87,.20)';
+      ctx.beginPath();
+      ctx.arc(
+        x + TILE * (.18 + jungleSeed(r, c, 346) * .64),
+        y + TILE * (.18 + jungleSeed(r, c, 347) * .64),
+        detail > .92 ? 1.7 : 1.0,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+    }
+  }
+
   function drawAmbient(now) {
     const jungle = currentLevel === 1;
     const volcanic = currentLevel === 2;
@@ -3994,6 +4346,7 @@
     const sky = currentLevel === 5;
     const city = currentLevel === 6;
     const cave = currentLevel === 7;
+    const island = currentLevel === 8;
     ctx.save();
     for (let i = 0; i < 18; i++) {
       const seedX = (i * 97) % canvas.width;
@@ -4027,6 +4380,10 @@
         ctx.fillStyle = i % 4 === 0
           ? `rgba(112,235,222,${alpha * 1.20})`
           : `rgba(208,161,101,${alpha * 1.05})`;
+      } else if (island) {
+        ctx.fillStyle = i % 3 === 0
+          ? `rgba(103,237,219,${alpha * 1.28})`
+          : `rgba(239,211,117,${alpha * 1.10})`;
       } else {
         ctx.fillStyle = `rgba(32,245,229,${alpha})`;
       }
@@ -4036,9 +4393,9 @@
       const bubbleLift = marine ? ((now * .013 + i * 31) % 48) : 0;
       const skyDrift = sky ? ((now * .008 + i * 19) % 56) : 0;
       ctx.arc(
-        city ? seedX : cave ? seedX + drift * .25 : seedX + drift + sandDrift + skyDrift + (marine ? Math.sin(now * .0012 + i) * 5 : 0),
-        city ? seedY : cave ? seedY + Math.sin(now * .0008 + i) * 2 : seedY - drift * .4 - emberLift - bubbleLift + (desert ? Math.sin(now * .001 + i) * 3 : 0) + (sky ? Math.sin(now * .0009 + i) * 4 : 0),
-        volcanic ? 1 + (i % 2) : desert ? .9 + (i % 3) * .45 : marine ? 1.1 + (i % 3) * .55 : sky ? 1.3 + (i % 3) * .50 : city ? .9 + (i % 2) * .6 : cave ? .9 + (i % 2) * .45 : 1.5 + (i % 3),
+        city ? seedX : cave ? seedX + drift * .25 : island ? seedX + drift * .45 : seedX + drift + sandDrift + skyDrift + (marine ? Math.sin(now * .0012 + i) * 5 : 0),
+        city ? seedY : cave ? seedY + Math.sin(now * .0008 + i) * 2 : island ? seedY + Math.sin(now * .0011 + i) * 3 : seedY - drift * .4 - emberLift - bubbleLift + (desert ? Math.sin(now * .001 + i) * 3 : 0) + (sky ? Math.sin(now * .0009 + i) * 4 : 0),
+        volcanic ? 1 + (i % 2) : desert ? .9 + (i % 3) * .45 : marine ? 1.1 + (i % 3) * .55 : sky ? 1.3 + (i % 3) * .50 : city ? .9 + (i % 2) * .6 : cave ? .9 + (i % 2) * .45 : island ? 1 + (i % 3) * .42 : 1.5 + (i % 3),
         0,
         Math.PI * 2
       );
@@ -4123,6 +4480,7 @@
     const sky = currentLevel === 5;
     const city = currentLevel === 6;
     const cave = currentLevel === 7;
+    const island = currentLevel === 8;
     const boardGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
     if (jungle) {
       boardGradient.addColorStop(0, '#06140b');
@@ -4152,6 +4510,10 @@
       boardGradient.addColorStop(0, '#120d09');
       boardGradient.addColorStop(.52, '#010202');
       boardGradient.addColorStop(1, '#1b100a');
+    } else if (island) {
+      boardGradient.addColorStop(0, '#092019');
+      boardGradient.addColorStop(.52, '#010403');
+      boardGradient.addColorStop(1, '#10281b');
     } else {
       boardGradient.addColorStop(0, '#020a0a');
       boardGradient.addColorStop(.55, '#000404');
@@ -4179,6 +4541,8 @@
             drawCityWallTile(x, y, r, c);
           } else if (cave) {
             drawCaveWallTile(x, y, r, c);
+          } else if (island) {
+            drawIslandWallTile(x, y, r, c);
           } else {
             drawDefaultWallTile(x, y);
           }
@@ -4196,6 +4560,8 @@
           drawCityFloorTile(x, y, r, c);
         } else if (cave) {
           drawCaveFloorTile(x, y, r, c);
+        } else if (island) {
+          drawIslandFloorTile(x, y, r, c);
         } else {
           drawDefaultFloorTile(x, y, r, c);
         }
