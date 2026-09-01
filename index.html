@@ -366,6 +366,107 @@
       filter: drop-shadow(0 5px 7px rgba(0,0,0,.42));
     }
 
+    .registration-modal {
+      width: min(600px, 100%);
+    }
+
+    .registration-form {
+      text-align: left;
+    }
+
+    .registration-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px 11px;
+      margin: 12px 0;
+    }
+
+    .registration-field {
+      display: grid;
+      gap: 4px;
+      color: #eaffff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .registration-field input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid rgba(32,245,229,.28);
+      border-radius: 10px;
+      outline: none;
+      background: rgba(0,12,12,.82);
+      padding: 9px 10px;
+      color: #efffff;
+      font: inherit;
+      font-weight: 600;
+      transition: border-color .16s ease, box-shadow .16s ease;
+    }
+
+    .registration-field input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(32,245,229,.11);
+    }
+
+    .registration-field input::placeholder {
+      color: rgba(184,211,207,.58);
+    }
+
+    .consent-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: start;
+      gap: 8px;
+      margin: 7px 0;
+      color: var(--muted);
+      font-size: 11.5px;
+      line-height: 1.35;
+    }
+
+    .consent-row input {
+      width: 18px;
+      height: 18px;
+      margin: 1px 0 0;
+      accent-color: var(--accent);
+    }
+
+    .registration-error {
+      margin-top: 8px !important;
+      padding: 8px 10px;
+      border: 1px solid rgba(255,117,135,.46);
+      border-radius: 10px;
+      background: rgba(91,21,40,.44);
+      color: #ffd1d8 !important;
+    }
+
+    .registration-submit-status {
+      color: var(--accent) !important;
+      font-weight: 800;
+    }
+
+    @media (max-width: 600px) {
+      .registration-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        margin: 8px 0;
+      }
+
+      .registration-field {
+        gap: 2px;
+        font-size: 11px;
+      }
+
+      .registration-field input {
+        min-height: 38px;
+        padding: 7px 9px;
+      }
+
+      .consent-row {
+        margin: 5px 0;
+        font-size: 10.5px;
+      }
+    }
+
     .quiz-modal {
       width: min(560px, 100%);
     }
@@ -646,6 +747,45 @@
           </div>
         </div>
 
+
+        <div id="registrationOverlay" class="overlay hidden">
+          <div class="modal registration-modal">
+            <div class="big">📝</div>
+            <h2>Registro del jugador</h2>
+            <p>Completa tus datos para comenzar el nivel.</p>
+            <form id="registrationForm" class="registration-form">
+              <div class="registration-grid">
+                <label class="registration-field">
+                  <span>Nombre</span>
+                  <input id="regFirstName" name="nombre" type="text" autocomplete="given-name" maxlength="60" placeholder="Escribe tu nombre" required />
+                </label>
+                <label class="registration-field">
+                  <span>Apellido</span>
+                  <input id="regLastName" name="apellido" type="text" autocomplete="family-name" maxlength="60" placeholder="Escribe tu apellido" required />
+                </label>
+                <label class="registration-field">
+                  <span>Correo electrónico</span>
+                  <input id="regEmail" name="correo_electronico" type="email" autocomplete="email" maxlength="120" placeholder="nombre@institucion.edu" required />
+                </label>
+                <label class="registration-field">
+                  <span>Institución</span>
+                  <input id="regInstitution" name="institucion" type="text" autocomplete="organization" maxlength="120" placeholder="Universidad, colegio u organización" required />
+                </label>
+              </div>
+              <label class="consent-row">
+                <input id="regConsent" name="consentimiento" type="checkbox" required />
+                <span>Acepto que estos datos se registren para el seguimiento educativo del juego. No se solicitan contraseñas ni información financiera.</span>
+              </label>
+              <p id="registrationError" class="registration-error hidden" aria-live="polite"></p>
+              <p id="registrationStatus" class="registration-submit-status hidden" aria-live="polite">Registrando datos…</p>
+              <div class="modal-buttons">
+                <button type="button" id="registrationBackBtn" class="action">Volver</button>
+                <button type="submit" id="registrationSubmitBtn" class="action primary">Registrar y jugar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
         <div id="itemOverlay" class="overlay hidden">
           <div class="modal">
             <div id="itemIcon" class="big">🔎</div>
@@ -817,6 +957,8 @@
     'Identifica contenido fabricado'
   ];
 
+  const REGISTRATION_ENDPOINT = '__GOOGLE_APPS_SCRIPT_WEB_APP_URL__';
+  const GAME_VERSION = '2026.09.01-registration';
   const QUIZ_LENGTH = 5;
   const QUIZ_BANK = [
     {
@@ -923,6 +1065,17 @@
 
   const ui = {
     startOverlay: document.getElementById('startOverlay'),
+    registrationOverlay: document.getElementById('registrationOverlay'),
+    registrationForm: document.getElementById('registrationForm'),
+    regFirstName: document.getElementById('regFirstName'),
+    regLastName: document.getElementById('regLastName'),
+    regEmail: document.getElementById('regEmail'),
+    regInstitution: document.getElementById('regInstitution'),
+    regConsent: document.getElementById('regConsent'),
+    registrationError: document.getElementById('registrationError'),
+    registrationStatus: document.getElementById('registrationStatus'),
+    registrationBackBtn: document.getElementById('registrationBackBtn'),
+    registrationSubmitBtn: document.getElementById('registrationSubmitBtn'),
     startLevelTitle: document.getElementById('startLevelTitle'),
     startLevelText: document.getElementById('startLevelText'),
     itemOverlay: document.getElementById('itemOverlay'),
@@ -983,6 +1136,7 @@
   savedSnakeLength = Math.max(3, Math.min(savedSnakeLength, currentLevel + 2));
   let activeTypes = VERIFICATION_ORDER.slice(0, currentLevel + 2);
   let resultAction = 'retry';
+  let playerRegistration = null;
   let quizQuestions = [];
   let quizIndex = 0;
   let quizScore = 0;
@@ -1643,6 +1797,7 @@
   function restartAfterQuiz() {
     currentLevel = 1;
     savedSnakeLength = 3;
+    playerRegistration = null;
     safeStorageSet('fakesnake_level', '1');
     safeStorageSet('fakesnake_snake_length', '3');
     ui.quizOverlay.classList.add('hidden');
@@ -1668,16 +1823,48 @@
     ui.itemOverlay.classList.add('hidden');
     ui.messageOverlay.classList.add('hidden');
     ui.quizOverlay.classList.add('hidden');
+    ui.registrationOverlay.classList.add('hidden');
     setGameControlsEnabled(true);
     ui.startOverlay.classList.remove('hidden');
     updateLevelIntro();
     ui.status.textContent = 'Elige un avatar y pulsa «Comenzar nivel».';
   }
 
-  function startSelected(event) {
-    if (event) event.preventDefault();
+  function cleanRegistrationValue(value, maxLength) {
+    return String(value || '').trim().replace(/\s+/g, ' ').slice(0, maxLength);
+  }
+
+  function createSessionId() {
+    let randomPart = Math.random().toString(36).slice(2, 10);
+    try {
+      const bytes = new Uint8Array(8);
+      window.crypto.getRandomValues(bytes);
+      randomPart = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+    } catch (error) {
+      // Se usa el valor aleatorio de respaldo si crypto no está disponible.
+    }
+    return `lv-${Date.now().toString(36)}-${randomPart}`;
+  }
+
+  function showRegistrationForm() {
+    ui.startOverlay.classList.add('hidden');
+    ui.registrationError.classList.add('hidden');
+    ui.registrationStatus.classList.add('hidden');
+    ui.registrationOverlay.classList.remove('hidden');
+    window.setTimeout(() => ui.regFirstName.focus({ preventScroll: true }), 0);
+  }
+
+  function closeRegistrationForm() {
+    ui.registrationOverlay.classList.add('hidden');
+    ui.startOverlay.classList.remove('hidden');
+    ui.registrationError.classList.add('hidden');
+    ui.registrationStatus.classList.add('hidden');
+  }
+
+  function beginSelectedLevel() {
     safeStorageSet('fakesnake_avatar', selectedAvatar);
     ui.startOverlay.classList.add('hidden');
+    ui.registrationOverlay.classList.add('hidden');
     ui.itemOverlay.classList.add('hidden');
     ui.messageOverlay.classList.add('hidden');
     ui.quizOverlay.classList.add('hidden');
@@ -1685,6 +1872,90 @@
     ui.pauseBtn.textContent = 'Pausar';
     buildLevel();
     canvas.focus({ preventScroll: true });
+  }
+
+  function startSelected(event) {
+    if (event) event.preventDefault();
+    if (!playerRegistration) {
+      showRegistrationForm();
+      return;
+    }
+    beginSelectedLevel();
+  }
+
+  async function submitRegistration(event) {
+    event.preventDefault();
+
+    if (!ui.registrationForm.checkValidity()) {
+      ui.registrationForm.reportValidity();
+      return;
+    }
+
+    const nombre = cleanRegistrationValue(ui.regFirstName.value, 60);
+    const apellido = cleanRegistrationValue(ui.regLastName.value, 60);
+    const correo = cleanRegistrationValue(ui.regEmail.value, 120).toLowerCase();
+    const institucion = cleanRegistrationValue(ui.regInstitution.value, 120);
+
+    if (!nombre || !apellido || !correo || !institucion || !ui.regConsent.checked) {
+      ui.registrationError.textContent = 'Completa todos los campos y acepta el registro de datos.';
+      ui.registrationError.classList.remove('hidden');
+      return;
+    }
+
+    if (REGISTRATION_ENDPOINT.includes('__GOOGLE_APPS_SCRIPT_')) {
+      ui.registrationError.textContent = 'El servicio de registro todavía no está conectado. Inténtalo nuevamente cuando se complete la configuración.';
+      ui.registrationError.classList.remove('hidden');
+      return;
+    }
+
+    const sessionId = createSessionId();
+    const payload = {
+      action: 'register_session',
+      game_id: 'lavibora-2026',
+      website: '',
+      session_id: sessionId,
+      nombre,
+      apellido,
+      nombre_apellido: `${nombre} ${apellido}`,
+      correo_electronico: correo,
+      institucion,
+      consentimiento: true,
+      avatar: selectedAvatar,
+      nivel_actual: currentLevel,
+      nivel_alcanzado: currentLevel,
+      estado: 'registrado',
+      vidas_restantes: 3,
+      navegador: cleanRegistrationValue(window.navigator && window.navigator.userAgent, 250),
+      origen: cleanRegistrationValue(window.location && window.location.href, 250),
+      version_juego: GAME_VERSION
+    };
+
+    ui.registrationSubmitBtn.disabled = true;
+    ui.registrationBackBtn.disabled = true;
+    ui.registrationError.classList.add('hidden');
+    ui.registrationStatus.classList.remove('hidden');
+
+    try {
+      await fetch(REGISTRATION_ENDPOINT, {
+        method: 'POST',
+        mode: 'no-cors',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify(payload)
+      });
+
+      playerRegistration = { sessionId };
+      ui.registrationForm.reset();
+      beginSelectedLevel();
+      ui.status.textContent = 'Datos registrados. Comienza el nivel.';
+    } catch (error) {
+      ui.registrationError.textContent = 'No fue posible registrar los datos. Revisa la conexión e inténtalo nuevamente.';
+      ui.registrationError.classList.remove('hidden');
+      ui.registrationStatus.classList.add('hidden');
+    } finally {
+      ui.registrationSubmitBtn.disabled = false;
+      ui.registrationBackBtn.disabled = false;
+    }
   }
 
   function resetLevel() {
@@ -2249,6 +2520,8 @@
   });
 
   ui.startBtn.addEventListener('click', startSelected);
+  ui.registrationForm.addEventListener('submit', submitRegistration);
+  ui.registrationBackBtn.addEventListener('click', closeRegistrationForm);
   ui.continueBtn.addEventListener('click', continueAfterItem);
   ui.retryBtn.addEventListener('click', handleResultAction);
   ui.quizTrueBtn.addEventListener('click', () => answerQuiz(true));
