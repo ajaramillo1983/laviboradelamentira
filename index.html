@@ -158,6 +158,20 @@
       border-radius: 18px;
     }
 
+    .lives-indicator {
+      min-width: 132px;
+      padding: 5px 10px;
+      border: 1px solid rgba(255,77,109,.28);
+      border-radius: 999px;
+      background: rgba(30,6,11,.72);
+      color: #ffd7df;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .02em;
+      text-align: center;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+    }
+
     .controls {
       display: grid;
       grid-template-columns: repeat(3, 42px);
@@ -539,6 +553,12 @@
         border-radius: 15px;
       }
 
+      .lives-indicator {
+        min-width: 116px;
+        padding: 4px 8px;
+        font-size: 10.5px;
+      }
+
       .overlay {
         inset: 6px;
         padding: 5px;
@@ -639,6 +659,11 @@
       .game-controls {
         padding: 4px 7px;
         gap: 4px;
+      }
+
+      .lives-indicator {
+        padding: 3px 7px;
+        font-size: 10px;
       }
 
       .controls {
@@ -845,6 +870,7 @@
         <div id="status" class="sr-only" aria-live="polite">Elige un avatar y pulsa «Comenzar nivel».</div>
         <div id="objectiveItems" class="sr-only"></div>
         <span id="objExit" class="sr-only">Salida bloqueada</span>
+        <div id="livesIndicator" class="lives-indicator" aria-live="polite">Vidas: ❤️ ❤️ ❤️</div>
 
         <div class="controls" aria-label="Controles táctiles">
           <button class="empty" tabindex="-1" aria-hidden="true"></button>
@@ -868,9 +894,15 @@
   'use strict';
 
   const TRACKING_URL = 'https://script.google.com/macros/s/AKfycbytxb5RL0u_kkdZt-8NCJxd0dxolTxPTCk_p2dK6WGvjQZlfMzA1POQI9gHkfj6sc1UvQ/exec';
-  const GAME_VERSION = '2026.09.02';
+  const GAME_VERSION = '2026.09.02.3';
   const SESSION_STORAGE_KEY = 'lavibora_tracking_session';
   const TRACKING_QUEUE_KEY = 'lavibora_tracking_queue';
+  const TOTAL_LIVES = 3;
+  const LIFE_LOSS_MESSAGES = [
+    'Has perdido una de tus tres vidas. Recuerda: si no verifico corro el riesgo de consumir y compartir contenido que puede afectar la toma de decisiones. Por ejemplo, datos imprecisos en época de campaña electoral que pueden afectar mi decisión de voto, información falsa sobre medicinas o curas milagrosas para tratar enfermedades en lugar de recomendaciones de médicos y especialistas, así como promociones e información engañosa que busca apropiarse de claves o datos personales para estafar.',
+    'Has perdido una de tus tres vidas. Recuerda: si no verifico corro el riesgo de multiplicar la propagación de desinformación que puede perjudicar a personas u organizaciones reales que se encuentran detrás de las redes sociales. Un estudio del MIT, Instituto Tecnológico de Massachusetts (en inglés Massachusetts Institute of Technology) analizó entre el 2006 y 2017 información compartida en Twitter, hoy X, y detectó que las noticias falsas se compartieron 70% más que la información real. En la era de la IA, la información verdadera se confunde también entre deep fakes y cheap fakes.',
+    'Te quedaste sin vidas. Recuerda: Si no verifico corro el riesgo de normalizar el uso irresponsable de redes sociales y contenido digital. Como consecuencia instituimos comportamientos precipitados y prácticas autómatas al crear, producir y reproducir contenido en nuestros grupos de amigos y de trabajo, en el colegio y la universidad, en nuestras familias, construyendo una cultura con poca o nula conciencia frente a la veracidad de la información y, al final, una sociedad indiferente.'
+  ];
 
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
@@ -1111,6 +1143,7 @@
     status: document.getElementById('status'),
     objectiveItems: document.getElementById('objectiveItems'),
     objExit: document.getElementById('objExit'),
+    livesIndicator: document.getElementById('livesIndicator'),
     messageIcon: document.getElementById('messageIcon'),
     messageTitle: document.getElementById('messageTitle'),
     messageText: document.getElementById('messageText'),
@@ -1162,6 +1195,14 @@
     }
   }
 
+  function safeSessionRemove(key) {
+    try {
+      window.sessionStorage.removeItem(key);
+    } catch (error) {
+      // El juego continúa aunque el navegador bloquee sessionStorage.
+    }
+  }
+
   const allowedAvatars = ['student', 'teacher'];
   let selectedAvatar = safeStorageGet('fakesnake_avatar', 'student');
   if (!allowedAvatars.includes(selectedAvatar)) selectedAvatar = 'student';
@@ -1172,6 +1213,8 @@
   savedSnakeLength = Math.max(3, Math.min(savedSnakeLength, currentLevel + 2));
   let activeTypes = VERIFICATION_ORDER.slice(0, currentLevel + 2);
   let resultAction = 'retry';
+  let menuAction = 'avatar';
+  let livesRemaining = TOTAL_LIVES;
   let quizQuestions = [];
   let quizIndex = 0;
   let quizScore = 0;
@@ -1268,6 +1311,7 @@
       nivel_actual: currentLevel,
       nivel_alcanzado: highestLevelReached,
       estado: gameState === 'menu' ? 'registrado' : 'en_progreso',
+      vidas_restantes: livesRemaining,
       tiempo_total_segundos: totalSessionSeconds(),
       certificado_emitido: false,
       navegador: navigator.userAgent,
@@ -1314,7 +1358,8 @@
     safeSessionSet(SESSION_STORAGE_KEY, JSON.stringify({
       sessionId,
       sessionStartedAt,
-      participant
+      participant,
+      livesRemaining
     }));
   }
 
@@ -1325,6 +1370,10 @@
       sessionId = String(stored.sessionId);
       sessionStartedAt = Number(stored.sessionStartedAt) || Date.now();
       participant = stored.participant;
+      const storedLives = Number(stored.livesRemaining);
+      livesRemaining = Number.isInteger(storedLives)
+        ? Math.max(0, Math.min(TOTAL_LIVES, storedLives))
+        : TOTAL_LIVES;
       return Boolean(
         participant.nombre
         && participant.apellido
@@ -1337,6 +1386,102 @@
     }
   }
 
+  function updateLivesUI() {
+    const activeHearts = Array.from({ length: livesRemaining }, () => '❤️');
+    const lostHearts = Array.from({ length: TOTAL_LIVES - livesRemaining }, () => '🖤');
+    ui.livesIndicator.textContent = livesRemaining > 0
+      ? `Vidas: ${[...activeHearts, ...lostHearts].join(' ')}`
+      : 'Vidas: sin vidas';
+  }
+
+  function configureLossOverlay() {
+    const lostLives = TOTAL_LIVES - livesRemaining;
+    const messageIndex = Math.max(0, Math.min(LIFE_LOSS_MESSAGES.length - 1, lostLives - 1));
+    ui.messageIcon.textContent = livesRemaining > 0 ? '💔' : '⛔';
+    ui.messageTitle.textContent = livesRemaining > 0
+      ? 'Has perdido una vida'
+      : 'Te quedaste sin vidas';
+    ui.messageText.textContent = LIFE_LOSS_MESSAGES[messageIndex];
+    ui.messageStats.textContent = livesRemaining > 0
+      ? `Te ${livesRemaining === 1 ? 'queda' : 'quedan'} ${livesRemaining} ${livesRemaining === 1 ? 'vida' : 'vidas'}.`
+      : 'Para volver a jugar debes comenzar nuevamente desde el nivel 1.';
+    resultAction = livesRemaining > 0 ? 'retry' : 'restart';
+    ui.retryBtn.textContent = livesRemaining > 0 ? 'Reintentar nivel' : 'Volver al nivel 1';
+    menuAction = 'exit';
+    ui.menuBtn.textContent = 'Salir del juego';
+  }
+
+  function startNewRun(detail = {}) {
+    currentLevel = 1;
+    savedSnakeLength = 3;
+    livesRemaining = TOTAL_LIVES;
+    highestLevelReached = 1;
+    sessionId = createSessionId();
+    sessionStartedAt = Date.now();
+    safeStorageSet('fakesnake_level', '1');
+    safeStorageSet('fakesnake_snake_length', '3');
+    saveCurrentTrackingSession();
+    updateLivesUI();
+    void trackSessionAndEvent('session_start', detail, {
+      estado: 'registrado',
+      nivel_actual: 1,
+      nivel_alcanzado: 1,
+      vidas_restantes: TOTAL_LIVES
+    });
+  }
+
+  function exitGame() {
+    if (participant && sessionId) {
+      void trackSessionAndEvent('session_exit', {
+        nivel_abandonado: currentLevel,
+        vidas_restantes: livesRemaining
+      }, {
+        estado: livesRemaining === 0 ? 'sin_vidas' : 'abandonado',
+        fecha_fin: new Date().toISOString(),
+        vidas_restantes: livesRemaining
+      }, {
+        vida: livesRemaining
+      });
+    }
+
+    participant = null;
+    sessionId = '';
+    sessionStartedAt = Date.now();
+    currentLevel = 1;
+    savedSnakeLength = 3;
+    livesRemaining = TOTAL_LIVES;
+    highestLevelReached = 1;
+    gameState = 'menu';
+    safeStorageSet('fakesnake_level', '1');
+    safeStorageSet('fakesnake_snake_length', '3');
+    safeSessionRemove(SESSION_STORAGE_KEY);
+    ui.registrationForm.reset();
+    ui.trackingStatus.className = 'tracking-status';
+    ui.trackingStatus.textContent = 'La partida terminó. Puedes iniciar una nueva cuando quieras.';
+    ui.itemOverlay.classList.add('hidden');
+    ui.messageOverlay.classList.add('hidden');
+    ui.quizOverlay.classList.add('hidden');
+    ui.gameMenuPanel.classList.add('hidden');
+    ui.registrationPanel.classList.remove('hidden');
+    ui.startOverlay.classList.remove('hidden');
+    updateLevelIntro();
+    updateLivesUI();
+    setGameControlsEnabled(false);
+    ui.status.textContent = 'Has salido del juego.';
+  }
+
+  function showStoredOutOfLives() {
+    gameState = 'lost';
+    ui.startOverlay.classList.add('hidden');
+    ui.itemOverlay.classList.add('hidden');
+    ui.quizOverlay.classList.add('hidden');
+    configureLossOverlay();
+    ui.messageOverlay.classList.remove('hidden');
+    updateLivesUI();
+    setGameControlsEnabled(false);
+    ui.status.textContent = 'Te quedaste sin vidas.';
+  }
+
   function showGameMenuPanel() {
     ui.registrationPanel.classList.add('hidden');
     ui.gameMenuPanel.classList.remove('hidden');
@@ -1347,6 +1492,14 @@
   async function handleRegistration(event) {
     event.preventDefault();
     if (!ui.registrationForm.reportValidity()) return;
+
+    currentLevel = 1;
+    savedSnakeLength = 3;
+    livesRemaining = TOTAL_LIVES;
+    highestLevelReached = 1;
+    safeStorageSet('fakesnake_level', '1');
+    safeStorageSet('fakesnake_snake_length', '3');
+    updateLivesUI();
 
     participant = {
       nombre: ui.participantName.value.trim(),
@@ -1885,6 +2038,7 @@
     highestLevelReached = Math.max(highestLevelReached, currentLevel);
     updateLevelIntro();
     updateUI();
+    updateLivesUI();
     ui.status.textContent = `Nivel ${currentLevel}: recoge ${activeTypes.length} elementos y encuentra la salida.`;
     void trackSessionAndEvent('level_start', {
       objetivo_elementos: activeTypes.length,
@@ -2041,6 +2195,8 @@
       ui.retryBtn.textContent = 'Responder el cuestionario final';
       ui.messageStats.textContent += ' Superaste los 10 niveles. Ahora demuestra lo que aprendiste.';
     }
+    menuAction = 'avatar';
+    ui.menuBtn.textContent = 'Elegir avatar';
     ui.messageOverlay.classList.remove('hidden');
     ui.status.textContent = 'Nivel superado.';
     void trackSessionAndEvent('level_complete', {
@@ -2058,20 +2214,26 @@
     if (gameState !== 'playing') return;
     gameState = 'lost';
     elapsed = (performance.now() - startTime) / 1000;
-    ui.messageIcon.textContent = '⚠️';
-    ui.messageTitle.textContent = 'La víbora de la mentira te alcanzó';
-    ui.messageText.textContent = 'La mentira puede circular más rápido que la verificación. No compartas un contenido si desconoces quién lo creó, cuándo se publicó y de dónde salió.';
-    ui.messageStats.textContent = `Recogiste ${collected.size} de ${activeTypes.length} elementos en ${elapsed.toFixed(1)} s.`;
-    resultAction = 'retry';
-    ui.retryBtn.textContent = 'Reintentar nivel';
+    livesRemaining = Math.max(0, livesRemaining - 1);
+    saveCurrentTrackingSession();
+    updateLivesUI();
+    configureLossOverlay();
     ui.messageOverlay.classList.remove('hidden');
-    ui.status.textContent = 'Nivel perdido.';
+    ui.status.textContent = livesRemaining > 0
+      ? `Perdiste una vida. Te quedan ${livesRemaining}.`
+      : 'Te quedaste sin vidas.';
     void trackSessionAndEvent('life_lost', {
       tiempo_nivel_segundos: Number(elapsed.toFixed(1)),
       elementos_recogidos: collected.size,
-      elementos_requeridos: activeTypes.length
+      elementos_requeridos: activeTypes.length,
+      vidas_restantes: livesRemaining,
+      numero_de_vida_perdida: TOTAL_LIVES - livesRemaining
     }, {
-      estado: 'en_progreso'
+      estado: livesRemaining > 0 ? 'en_progreso' : 'sin_vidas',
+      fecha_fin: livesRemaining > 0 ? undefined : new Date().toISOString(),
+      vidas_restantes: livesRemaining
+    }, {
+      vida: livesRemaining
     });
   }
 
@@ -2214,22 +2376,10 @@
   }
 
   function restartAfterQuiz() {
-    currentLevel = 1;
-    savedSnakeLength = 3;
-    safeStorageSet('fakesnake_level', '1');
-    safeStorageSet('fakesnake_snake_length', '3');
     ui.quizOverlay.classList.add('hidden');
     setGameControlsEnabled(true);
-    sessionId = createSessionId();
-    sessionStartedAt = Date.now();
-    highestLevelReached = 1;
-    saveCurrentTrackingSession();
-    void trackSessionAndEvent('session_start', {
+    startNewRun({
       reinicio_despues_del_quiz: true
-    }, {
-      estado: 'registrado',
-      nivel_actual: 1,
-      nivel_alcanzado: 1
     });
     showMenu();
   }
@@ -2249,6 +2399,8 @@
 
   function showMenu() {
     gameState = 'menu';
+    menuAction = 'avatar';
+    ui.menuBtn.textContent = 'Elegir avatar';
     ui.itemOverlay.classList.add('hidden');
     ui.messageOverlay.classList.add('hidden');
     ui.quizOverlay.classList.add('hidden');
@@ -2258,8 +2410,20 @@
     ui.status.textContent = 'Elige un avatar y pulsa «Comenzar nivel».';
   }
 
+  function handleMenuAction() {
+    if (menuAction === 'exit') {
+      exitGame();
+      return;
+    }
+    showMenu();
+  }
+
   function startSelected(event) {
     if (event) event.preventDefault();
+    if (livesRemaining <= 0) {
+      showStoredOutOfLives();
+      return;
+    }
     safeStorageSet('fakesnake_avatar', selectedAvatar);
     ui.startOverlay.classList.add('hidden');
     ui.itemOverlay.classList.add('hidden');
@@ -2272,7 +2436,7 @@
   }
 
   function resetLevel() {
-    if (gameState === 'menu' || gameState === 'quiz') return;
+    if (gameState === 'menu' || gameState === 'quiz' || livesRemaining <= 0) return;
     ui.itemOverlay.classList.add('hidden');
     ui.messageOverlay.classList.add('hidden');
     ui.quizOverlay.classList.add('hidden');
@@ -2289,10 +2453,7 @@
       currentLevel = Math.min(LEVEL_COUNT, currentLevel + 1);
       safeStorageSet('fakesnake_level', String(currentLevel));
     } else if (resultAction === 'restart') {
-      currentLevel = 1;
-      savedSnakeLength = 3;
-      safeStorageSet('fakesnake_level', '1');
-      safeStorageSet('fakesnake_snake_length', '3');
+      startNewRun({ reinicio_despues_de_perder_tres_vidas: true });
     }
     resetLevel();
   }
@@ -5656,7 +5817,7 @@
   ui.quizFalseBtn.addEventListener('click', () => answerQuiz(false));
   ui.quizNextBtn.addEventListener('click', advanceQuiz);
   ui.quizRestartBtn.addEventListener('click', restartAfterQuiz);
-  ui.menuBtn.addEventListener('click', showMenu);
+  ui.menuBtn.addEventListener('click', handleMenuAction);
   ui.pauseBtn.addEventListener('click', togglePause);
   ui.resetBtn.addEventListener('click', resetLevel);
 
@@ -5669,7 +5830,11 @@
   items = [];
   updateLevelIntro();
   updateUI();
-  if (restoreTrackingSession()) {
+  const restoredTrackingSession = restoreTrackingSession();
+  updateLivesUI();
+  if (restoredTrackingSession && livesRemaining <= 0) {
+    showStoredOutOfLives();
+  } else if (restoredTrackingSession) {
     showGameMenuPanel();
   } else {
     ui.registrationPanel.classList.remove('hidden');
