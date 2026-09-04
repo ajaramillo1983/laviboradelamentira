@@ -897,10 +897,11 @@
   'use strict';
 
   const TRACKING_URL = 'https://script.google.com/macros/s/AKfycbytxb5RL0u_kkdZt-8NCJxd0dxolTxPTCk_p2dK6WGvjQZlfMzA1POQI9gHkfj6sc1UvQ/exec';
-  const GAME_VERSION = '2026.09.02.4';
+  const GAME_VERSION = '2026.09.03.1';
   const SESSION_STORAGE_KEY = 'lavibora_tracking_session';
   const TRACKING_QUEUE_KEY = 'lavibora_tracking_queue';
   const TOTAL_LIVES = 3;
+  const SNAKE_INTERVALS_BY_LEVEL = [960, 916, 650, 610, 570, 530, 490, 450, 410, 370];
   const LIFE_LOSS_MESSAGES = [
     'Has perdido una de tus tres vidas. Recuerda: si no verifico corro el riesgo de consumir y compartir contenido que puede afectar la toma de decisiones. Por ejemplo, datos imprecisos en época de campaña electoral que pueden afectar mi decisión de voto, información falsa sobre medicinas o curas milagrosas para tratar enfermedades en lugar de recomendaciones de médicos y especialistas, así como promociones e información engañosa que busca apropiarse de claves o datos personales para estafar.',
     'Has perdido una de tus tres vidas. Recuerda: si no verifico corro el riesgo de multiplicar la propagación de desinformación que puede perjudicar a personas u organizaciones reales que se encuentran detrás de las redes sociales. Un estudio del MIT, Instituto Tecnológico de Massachusetts (en inglés Massachusetts Institute of Technology) analizó entre el 2006 y 2017 información compartida en Twitter, hoy X, y detectó que las noticias falsas se compartieron 70% más que la información real. En la era de la IA, la información verdadera se confunde también entre deep fakes y cheap fakes.',
@@ -1549,6 +1550,7 @@
 
   function difficultyProfile(level = currentLevel) {
     const progress = LEVEL_COUNT > 1 ? (level - 1) / (LEVEL_COUNT - 1) : 0;
+    const levelIndex = Math.max(0, Math.min(SNAKE_INTERVALS_BY_LEVEL.length - 1, level - 1));
     return {
       shortcutTarget: Math.round(18 - progress * 10),
       minimumStartDistance: 3 + Math.floor(progress * 4),
@@ -1556,7 +1558,7 @@
       minimumCollectionRoute: 20 + (level - 1) * 5,
       minimumVisualSpacing: level <= 3 ? 5 : level <= 7 ? 4 : 3,
       minimumPathSpacing: level <= 3 ? 8 : level <= 7 ? 7 : 6,
-      snakeInterval: Math.round(960 - progress * 400),
+      snakeInterval: SNAKE_INTERVALS_BY_LEVEL[levelIndex],
       graceTime: Math.round(4800 - progress * 2200)
     };
   }
@@ -5810,17 +5812,34 @@
     if (vector) movePlayer(vector[0], vector[1]);
   }
 
+  function isEditableTarget(target) {
+    if (!(target instanceof Element)) return false;
+    return Boolean(target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])'));
+  }
+
   document.addEventListener('keydown', (event) => {
-    const k = event.key.toLowerCase();
+    // En Android y iOS el teclado virtual también dispara eventos de teclado.
+    // No deben convertirse en movimientos mientras se escribe en un formulario.
+    if (event.isComposing || isEditableTarget(event.target)) return;
+
+    const k = String(event.key || '').toLowerCase();
+    const code = String(event.code || '').toLowerCase();
     const keyMap = {
       arrowup: 'up', w: 'up',
       arrowdown: 'down', s: 'down',
       arrowleft: 'left', a: 'left',
       arrowright: 'right', d: 'right'
     };
-    if (keyMap[k]) {
+    const codeMap = {
+      arrowup: 'up', keyw: 'up',
+      arrowdown: 'down', keys: 'down',
+      arrowleft: 'left', keya: 'left',
+      arrowright: 'right', keyd: 'right'
+    };
+    const direction = keyMap[k] || codeMap[code];
+    if (direction) {
       event.preventDefault();
-      handleDirection(keyMap[k]);
+      handleDirection(direction);
     } else if (k === 'p') {
       togglePause();
     }
