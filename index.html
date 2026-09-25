@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#010505" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="./manifest.webmanifest" />
   <title>La víbora de la mentira — Prototipo 4D</title>
   <style>
     :root {
@@ -400,6 +402,24 @@
     }
 
     .tracking-status.error { color: #ffd1d8 !important; }
+
+    .offline-download {
+      display: inline-block;
+      margin-top: 6px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(32,245,229,.08);
+    }
+
+    .offline-download:hover, .offline-download:focus-visible { border-color: var(--accent); }
+    .offline-download[hidden] { display: none; }
+
+    .offline-hint { font-size: 11px !important; }
 
     .modal-logo {
       display: block;
@@ -809,6 +829,8 @@
                   <button type="submit" id="registrationSubmit" class="action primary">Continuar</button>
                 </div>
               </form>
+              <a class="offline-download" href="./index.html" download="La-vibora-de-la-mentira.html">⬇ Descargar juego para usar sin Internet</a>
+              <p class="ios-install hidden">En iPhone: abre esta página en Safari y selecciona Compartir → Añadir a pantalla de inicio para jugar sin conexión.</p>
             </section>
 
             <section id="gameMenuPanel" class="hidden">
@@ -821,6 +843,9 @@
             <div class="modal-buttons">
               <button type="button" id="startBtn" class="action primary">Comenzar nivel</button>
             </div>
+            <p id="offlineHint" class="offline-hint hidden">Modo sin conexión: puedes jugar sin registro. El avance se guarda en este navegador.</p>
+            <a class="offline-download" href="./index.html" download="La-vibora-de-la-mentira.html">⬇ Descargar juego para usar sin Internet</a>
+            <p class="ios-install hidden">En iPhone: abre esta página en Safari y selecciona Compartir → Añadir a pantalla de inicio para jugar sin conexión.</p>
             </section>
           </div>
         </div>
@@ -897,6 +922,8 @@
   'use strict';
 
   const TRACKING_URL = 'https://script.google.com/macros/s/AKfycbytxb5RL0u_kkdZt-8NCJxd0dxolTxPTCk_p2dK6WGvjQZlfMzA1POQI9gHkfj6sc1UvQ/exec';
+  // Los archivos descargados y las sesiones sin red funcionan sin registro ni telemetría.
+  const offlineMode = window.location.protocol === 'file:' || !navigator.onLine;
   const GAME_VERSION = '2026.09.03.1';
   const SESSION_STORAGE_KEY = 'lavibora_tracking_session';
   const TRACKING_QUEUE_KEY = 'lavibora_tracking_queue';
@@ -1131,6 +1158,7 @@
     participantConsent: document.getElementById('participantConsent'),
     trackingStatus: document.getElementById('trackingStatus'),
     gameMenuPanel: document.getElementById('gameMenuPanel'),
+    offlineHint: document.getElementById('offlineHint'),
     startLevelTitle: document.getElementById('startLevelTitle'),
     startLevelText: document.getElementById('startLevelText'),
     itemOverlay: document.getElementById('itemOverlay'),
@@ -1279,6 +1307,7 @@
   }
 
   function sendTracking(payload) {
+    if (offlineMode) return Promise.resolve(false);
     trackingChain = trackingChain.then(async () => {
       const pending = [...readTrackingQueue(), payload];
       for (let index = 0; index < pending.length; index++) {
@@ -1469,6 +1498,7 @@
     ui.gameMenuPanel.classList.add('hidden');
     ui.registrationPanel.classList.remove('hidden');
     ui.startOverlay.classList.remove('hidden');
+    if (offlineMode) showGameMenuPanel();
     updateLevelIntro();
     updateLivesUI();
     setGameControlsEnabled(false);
@@ -1490,6 +1520,7 @@
   function showGameMenuPanel() {
     ui.registrationPanel.classList.add('hidden');
     ui.gameMenuPanel.classList.remove('hidden');
+    ui.offlineHint.classList.toggle('hidden', !offlineMode);
     updateLevelIntro();
     ui.status.textContent = 'Elige un avatar y pulsa «Comenzar nivel».';
   }
@@ -2455,7 +2486,7 @@
   }
 
   function restartWholeGame() {
-    if (!participant || !sessionId) return;
+    if (!offlineMode && (!participant || !sessionId)) return;
     void trackSessionAndEvent('game_restart', {
       nivel_abandonado: currentLevel,
       vidas_restantes: livesRemaining,
@@ -5876,6 +5907,21 @@
   ui.resetBtn.addEventListener('click', restartCurrentLevel);
   ui.restartGameBtn.addEventListener('click', restartWholeGame);
 
+  if (window.location.protocol === 'file:') {
+    document.querySelectorAll('.offline-download').forEach(link => { link.hidden = true; });
+  }
+  if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+    document.querySelectorAll('.ios-install').forEach(hint => hint.classList.remove('hidden'));
+  }
+
+  if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(() => {
+        // La descarga HTML sigue disponible si la instalación no está permitida.
+      });
+    });
+  }
+
   // Tablero inicial visible detrás del menú.
   const preview = generateMaze();
   maze = preview.grid;
@@ -5885,11 +5931,11 @@
   items = [];
   updateLevelIntro();
   updateUI();
-  const restoredTrackingSession = restoreTrackingSession();
+  const restoredTrackingSession = !offlineMode && restoreTrackingSession();
   updateLivesUI();
   if (restoredTrackingSession && livesRemaining <= 0) {
     showStoredOutOfLives();
-  } else if (restoredTrackingSession) {
+  } else if (restoredTrackingSession || offlineMode) {
     showGameMenuPanel();
   } else {
     ui.registrationPanel.classList.remove('hidden');
