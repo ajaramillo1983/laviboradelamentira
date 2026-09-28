@@ -968,6 +968,20 @@
     danger: '#ff4d6d'
   };
 
+  // Selva, volcán, desierto, agua, cielo, ciudad, cueva, isla, montaña y fondo marino.
+  const SNAKE_PALETTES = [
+    { body: '#368a42', light: '#7bd35e', dark: '#194f2e', belly: '#b5d982', pattern: '#d3ed90' },
+    { body: '#bd4b27', light: '#f59a4d', dark: '#68251d', belly: '#ffd28a', pattern: '#ffbf68' },
+    { body: '#a87837', light: '#dfb968', dark: '#644624', belly: '#f5dfaa', pattern: '#f6d98a' },
+    { body: '#287da9', light: '#69c6e2', dark: '#174869', belly: '#c0edf1', pattern: '#a1e3eb' },
+    { body: '#698faa', light: '#b9d9e9', dark: '#35546d', belly: '#edf7ef', pattern: '#d6edee' },
+    { body: '#675697', light: '#ad9ddb', dark: '#393461', belly: '#d9cbed', pattern: '#c7b8ea' },
+    { body: '#77547d', light: '#bf8ec0', dark: '#432d4f', belly: '#e1bfd7', pattern: '#dfb0d5' },
+    { body: '#238b79', light: '#65d2ad', dark: '#145b57', belly: '#beeacc', pattern: '#a1e8be' },
+    { body: '#74834b', light: '#b7c17b', dark: '#424e36', belly: '#e2ddb0', pattern: '#d2d99b' },
+    { body: '#3a68a6', light: '#78abd3', dark: '#203c74', belly: '#b9d5e8', pattern: '#a5c8e9' }
+  ];
+
   const avatarStyles = {
     student: { skin:'#b7794c', hair:'#0a0c0c', shirt:'#0a3d3a', pants:'#051817', accent:'#20f5e5', role:'student' },
     teacher: { skin:'#b7794c', hair:'#111515', shirt:'#102a29', pants:'#050c0c', accent:'#20f5e5', role:'teacher' }
@@ -1261,6 +1275,7 @@
   let maze = [];
   let player = { r: ROWS - 2, c: 1 };
   let snake = [];
+  let snakeFacing = { r: -1, c: 0 };
   let items = [];
   let exit = { r: 0, c: 1, open: false };
   let collected = new Set();
@@ -2061,6 +2076,7 @@
 
     player = { ...playerStart };
     snake = [];
+    snakeFacing = { r: -1, c: 0 };
     for (let index = 0; index < savedSnakeLength; index++) {
       snake.push({ r: snakeStart.r, c: snakeStart.c });
     }
@@ -2199,6 +2215,9 @@
       next = options[randomInt(options.length)] || head;
     }
 
+    if (next.r !== head.r || next.c !== head.c) {
+      snakeFacing = { r: next.r - head.r, c: next.c - head.c };
+    }
     const newSnake = [{ r: next.r, c: next.c }];
     for (let i = 1; i < savedSnakeLength; i++) {
       newSnake.push({ ...snake[Math.min(i - 1, snake.length - 1)] });
@@ -5630,158 +5649,166 @@
 
   function drawSnake() {
     if (!snake.length) return;
+    const palette = SNAKE_PALETTES[currentLevel - 1] || SNAKE_PALETTES[0];
+    const points = snake.map(seg => ({
+      x: (seg.c + .5) * TILE,
+      y: (seg.r + .5) * TILE
+    })).reverse().filter((point, index, all) =>
+      index === 0 || point.x !== all[index - 1].x || point.y !== all[index - 1].y
+    );
+    const head = snake[0];
+    const hx = (head.c + .5) * TILE;
+    const hy = (head.r + .5) * TILE;
+    const neck = snake.find(seg => seg.r !== head.r || seg.c !== head.c);
+    const facing = neck
+      ? { r: head.r - neck.r, c: head.c - neck.c }
+      : snakeFacing;
 
     ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    if (snake.length > 1) {
+    if (points.length > 1) {
+      const tail = points[0];
+      const next = points[1];
+      const dx = next.x - tail.x;
+      const dy = next.y - tail.y;
+      const distance = Math.hypot(dx, dy) || 1;
+      const ux = dx / distance;
+      const uy = dy / distance;
+      const base = { x: tail.x + dx * .55, y: tail.y + dy * .55 };
+      const halfWidth = TILE * .21;
+
+      // La cola acaba en punta y se une al tronco sin círculos independientes.
+      ctx.fillStyle = palette.dark;
       ctx.beginPath();
-      for (let i = snake.length - 1; i >= 0; i--) {
-        const seg = snake[i];
-        const x = seg.c * TILE + TILE / 2;
-        const y = seg.r * TILE + TILE / 2;
-        if (i === snake.length - 1) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+      ctx.moveTo(tail.x, tail.y);
+      ctx.lineTo(base.x - uy * halfWidth, base.y + ux * halfWidth);
+      ctx.lineTo(base.x + uy * halfWidth, base.y - ux * halfWidth);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = palette.body;
+      ctx.beginPath();
+      ctx.moveTo(tail.x + ux * TILE * .06, tail.y + uy * TILE * .06);
+      ctx.lineTo(base.x - uy * halfWidth * .78, base.y + ux * halfWidth * .78);
+      ctx.lineTo(base.x + uy * halfWidth * .78, base.y - ux * halfWidth * .78);
+      ctx.closePath();
+      ctx.fill();
+
+      const body = new Path2D();
+      body.moveTo(base.x, base.y);
+      if (points.length === 2) {
+        body.lineTo(points[1].x, points[1].y);
+      } else {
+        for (let i = 1; i < points.length - 1; i++) {
+          const midpoint = {
+            x: (points[i].x + points[i + 1].x) / 2,
+            y: (points[i].y + points[i + 1].y) / 2
+          };
+          body.quadraticCurveTo(points[i].x, points[i].y, midpoint.x, midpoint.y);
+        }
+        body.lineTo(hx, hy);
       }
-      ctx.strokeStyle = 'rgba(0,0,0,.75)';
-      ctx.lineWidth = TILE * .64;
-      ctx.shadowColor = 'rgba(0,0,0,.8)';
-      ctx.shadowBlur = 20;
-      ctx.stroke();
-
-      ctx.shadowColor = 'rgba(32,245,229,.16)';
-      ctx.shadowBlur = 18;
-      ctx.strokeStyle = COLORS.snakeBody;
+      ctx.shadowColor = 'rgba(0,0,0,.65)';
+      ctx.shadowBlur = TILE * .17;
+      ctx.strokeStyle = palette.dark;
       ctx.lineWidth = TILE * .52;
-      ctx.stroke();
-
+      ctx.stroke(body);
       ctx.shadowBlur = 0;
-      ctx.strokeStyle = 'rgba(32,245,229,.27)';
-      ctx.lineWidth = TILE * .055;
-      ctx.stroke();
+      ctx.strokeStyle = palette.body;
+      ctx.lineWidth = TILE * .45;
+      ctx.stroke(body);
+      ctx.strokeStyle = palette.light;
+      ctx.globalAlpha = .22;
+      ctx.lineWidth = TILE * .26;
+      ctx.stroke(body);
+      ctx.globalAlpha = 1;
+
+      // Manchas pequeñas siguen la curvatura; no forman discos articulados.
+      for (let i = 1; i < points.length - 1; i++) {
+        const before = points[i];
+        const after = points[i + 1];
+        const point = { x: (before.x + after.x) / 2, y: (before.y + after.y) / 2 };
+        ctx.save();
+        ctx.translate(point.x, point.y);
+        ctx.rotate(Math.atan2(after.y - before.y, after.x - before.x));
+        ctx.fillStyle = palette.pattern;
+        ctx.globalAlpha = .58;
+        for (const side of [-1, 1]) {
+          ctx.beginPath();
+          ctx.ellipse(0, side * TILE * .12, TILE * .075, TILE * .037, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
     }
 
-    for (let i = snake.length - 1; i >= 1; i--) {
-      const seg = snake[i];
-      const x = seg.c * TILE + TILE / 2;
-      const y = seg.r * TILE + TILE / 2;
-      const radius = TILE * .27;
-      const g = ctx.createRadialGradient(x - radius * .4, y - radius * .4, radius * .1, x, y, radius);
-      g.addColorStop(0, '#0f3d39');
-      g.addColorStop(.45, '#051918');
-      g.addColorStop(1, '#000505');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(32,245,229,.22)';
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-
-      ctx.fillStyle = i % 2 ? 'rgba(32,245,229,.34)' : 'rgba(117,255,245,.18)';
-      ctx.beginPath();
-      ctx.ellipse(x - TILE * .06, y - TILE * .07, TILE * .075, TILE * .035, -.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    const head = snake[0];
-    const hx = head.c * TILE + TILE / 2;
-    const hy = head.r * TILE + TILE / 2;
-
-    ctx.save();
+    // Cabeza alargada, hocico redondeado y orientación real del movimiento.
     ctx.translate(hx, hy);
-    ctx.shadowColor = 'rgba(32,245,229,.30)';
-    ctx.shadowBlur = 16;
-
-    // Destellos turquesa inspirados en la portada.
-    ctx.strokeStyle = 'rgba(32,245,229,.75)';
-    ctx.lineWidth = TILE * .06;
+    ctx.rotate(Math.atan2(facing.r, facing.c) + Math.PI / 2);
+    ctx.shadowColor = 'rgba(0,0,0,.55)';
+    ctx.shadowBlur = TILE * .12;
+    const headGradient = ctx.createLinearGradient(0, -TILE * .45, 0, TILE * .34);
+    headGradient.addColorStop(0, palette.light);
+    headGradient.addColorStop(.55, palette.body);
+    headGradient.addColorStop(1, palette.dark);
+    ctx.fillStyle = headGradient;
+    ctx.strokeStyle = palette.dark;
+    ctx.lineWidth = TILE * .04;
     ctx.beginPath();
-    ctx.moveTo(-TILE * .42, -TILE * .12);
-    ctx.lineTo(-TILE * .70, -TILE * .34);
-    ctx.moveTo(-TILE * .44, TILE * .02);
-    ctx.lineTo(-TILE * .68, TILE * .26);
-    ctx.moveTo(TILE * .42, -TILE * .12);
-    ctx.lineTo(TILE * .70, -TILE * .34);
-    ctx.moveTo(TILE * .44, TILE * .02);
-    ctx.lineTo(TILE * .68, TILE * .26);
+    ctx.moveTo(0, -TILE * .43);
+    ctx.bezierCurveTo(TILE * .13, -TILE * .43, TILE * .21, -TILE * .33, TILE * .23, -TILE * .22);
+    ctx.bezierCurveTo(TILE * .31, -TILE * .06, TILE * .29, TILE * .15, TILE * .16, TILE * .27);
+    ctx.quadraticCurveTo(0, TILE * .38, -TILE * .16, TILE * .27);
+    ctx.bezierCurveTo(-TILE * .29, TILE * .15, -TILE * .31, -TILE * .06, -TILE * .23, -TILE * .22);
+    ctx.bezierCurveTo(-TILE * .21, -TILE * .33, -TILE * .13, -TILE * .43, 0, -TILE * .43);
+    ctx.closePath();
+    ctx.fill();
     ctx.stroke();
+    ctx.shadowBlur = 0;
 
-    // Cabeza geométrica blanca como la portada.
-    ctx.fillStyle = COLORS.white;
+    ctx.fillStyle = palette.belly;
+    ctx.globalAlpha = .55;
     ctx.beginPath();
-    ctx.moveTo(0, -TILE * .34);
-    ctx.lineTo(TILE * .27, -TILE * .20);
-    ctx.lineTo(TILE * .30, TILE * .02);
-    ctx.lineTo(TILE * .18, TILE * .30);
-    ctx.lineTo(TILE * .05, TILE * .22);
-    ctx.lineTo(0, TILE * .36);
-    ctx.lineTo(-TILE * .05, TILE * .22);
-    ctx.lineTo(-TILE * .18, TILE * .30);
-    ctx.lineTo(-TILE * .30, TILE * .02);
-    ctx.lineTo(-TILE * .27, -TILE * .20);
-    ctx.closePath();
+    ctx.ellipse(0, -TILE * .29, TILE * .135, TILE * .10, 0, 0, Math.PI * 2);
     ctx.fill();
+    ctx.globalAlpha = 1;
 
-    ctx.strokeStyle = 'rgba(32,245,229,.35)';
-    ctx.lineWidth = TILE * .02;
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = palette.dark;
+      ctx.beginPath();
+      ctx.ellipse(side * TILE * .18, -TILE * .10, TILE * .076, TILE * .092, side * .16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffeab2';
+      ctx.beginPath();
+      ctx.arc(side * TILE * .185, -TILE * .11, TILE * .046, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#111814';
+      ctx.beginPath();
+      ctx.ellipse(side * TILE * .188, -TILE * .11, TILE * .017, TILE * .038, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = palette.dark;
+      ctx.beginPath();
+      ctx.arc(side * TILE * .075, -TILE * .345, TILE * .018, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.strokeStyle = palette.dark;
+    ctx.lineWidth = TILE * .018;
+    ctx.beginPath();
+    ctx.moveTo(-TILE * .12, -TILE * .26);
+    ctx.quadraticCurveTo(0, -TILE * .215, TILE * .12, -TILE * .26);
     ctx.stroke();
-
-    // Ojos inclinados.
-    ctx.fillStyle = '#000';
+    ctx.strokeStyle = '#e96874';
+    ctx.lineWidth = TILE * .025;
     ctx.beginPath();
-    ctx.moveTo(-TILE * .18, -TILE * .14);
-    ctx.lineTo(-TILE * .04, -TILE * .18);
-    ctx.lineTo(-TILE * .11, -TILE * .05);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(TILE * .18, -TILE * .14);
-    ctx.lineTo(TILE * .04, -TILE * .18);
-    ctx.lineTo(TILE * .11, -TILE * .05);
-    ctx.closePath();
-    ctx.fill();
-
-    // Fosas nasales.
-    ctx.beginPath();
-    ctx.moveTo(-TILE * .05, -TILE * .01);
-    ctx.lineTo(-TILE * .015, TILE * .05);
-    ctx.lineTo(-TILE * .075, TILE * .05);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(TILE * .05, -TILE * .01);
-    ctx.lineTo(TILE * .075, TILE * .05);
-    ctx.lineTo(TILE * .015, TILE * .05);
-    ctx.closePath();
-    ctx.fill();
-
-    // Boca y colmillos.
-    ctx.beginPath();
-    ctx.moveTo(-TILE * .16, TILE * .08);
-    ctx.lineTo(-TILE * .05, TILE * .31);
-    ctx.lineTo(0, TILE * .15);
-    ctx.lineTo(TILE * .05, TILE * .31);
-    ctx.lineTo(TILE * .16, TILE * .08);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = COLORS.white;
-    ctx.beginPath();
-    ctx.moveTo(-TILE * .09, TILE * .08);
-    ctx.lineTo(-TILE * .03, TILE * .26);
-    ctx.lineTo(-TILE * .01, TILE * .09);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(TILE * .09, TILE * .08);
-    ctx.lineTo(TILE * .01, TILE * .09);
-    ctx.lineTo(TILE * .03, TILE * .26);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.restore();
+    ctx.moveTo(0, -TILE * .42);
+    ctx.lineTo(0, -TILE * .56);
+    ctx.moveTo(0, -TILE * .56);
+    ctx.lineTo(-TILE * .055, -TILE * .62);
+    ctx.moveTo(0, -TILE * .56);
+    ctx.lineTo(TILE * .055, -TILE * .62);
+    ctx.stroke();
     ctx.restore();
   }
 
