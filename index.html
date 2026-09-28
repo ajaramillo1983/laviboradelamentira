@@ -5905,6 +5905,11 @@
     if (event.isComposing || isEditableTarget(event.target)) return;
 
     const k = String(event.key || '').toLowerCase();
+    if (k === 'enter' && gameState === 'learning' && !ui.itemOverlay.classList.contains('hidden')) {
+      event.preventDefault();
+      if (!event.repeat) continueAfterItem();
+      return;
+    }
     const code = String(event.code || '').toLowerCase();
     const keyMap = {
       arrowup: 'up', w: 'up',
