@@ -265,6 +265,21 @@
 
     .actions button { min-width: 0; }
 
+    .audio-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      color: #d8fffb;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .audio-controls button { min-height: 36px; padding: 5px 10px; }
+    .audio-controls input { width: 100px; accent-color: var(--accent); }
+
     button.action {
       min-height: 36px;
       padding: 7px 10px;
@@ -965,6 +980,11 @@
           <button type="button" id="resetBtn" class="action">Reiniciar nivel</button>
           <button type="button" id="restartGameBtn" class="action danger">Reiniciar juego</button>
         </div>
+        <div class="audio-controls" aria-label="Audio del juego">
+          <button type="button" id="audioToggle" class="action" aria-pressed="true">🔊 Sonido activado</button>
+          <label for="audioVolume">Volumen</label>
+          <input id="audioVolume" type="range" min="0" max="100" value="35" aria-label="Volumen del juego" />
+        </div>
       </div>
     </section>
   </main>
@@ -1239,6 +1259,8 @@
     pauseBtn: document.getElementById('pauseBtn'),
     resetBtn: document.getElementById('resetBtn'),
     restartGameBtn: document.getElementById('restartGameBtn'),
+    audioToggle: document.getElementById('audioToggle'),
+    audioVolume: document.getElementById('audioVolume'),
     status: document.getElementById('status'),
     objectiveItems: document.getElementById('objectiveItems'),
     objExit: document.getElementById('objExit'),
@@ -1341,6 +1363,146 @@
   let snakeInterval = 430;
   let graceUntil = 0;
   let trackingChain = Promise.resolve();
+
+  // Música original sintetizada: las diez variaciones viven en este HTML descargable.
+  // Cada motivo cambia escala, pulso y timbre según el escenario.
+  const MUSIC_THEMES = [
+    { name: 'Selva', bpm: 104, root: 50, scale: [0,3,5,7,10], wave: 'sine', notes: [0,2,4,2,1,3,2,-1,0,2,3,4,3,1,2,-1] },
+    { name: 'Volcán', bpm: 132, root: 48, scale: [0,1,3,5,7,8,10], wave: 'triangle', notes: [0,1,4,3,0,5,4,-1,0,1,6,4,3,1,0,-1] },
+    { name: 'Desierto', bpm: 96, root: 52, scale: [0,2,3,7,8,11], wave: 'sine', notes: [0,-1,3,2,1,-1,4,3,0,2,5,4,3,-1,1,-1] },
+    { name: 'Agua', bpm: 88, root: 50, scale: [0,2,3,5,7,9,10], wave: 'sine', notes: [0,2,4,5,4,2,1,-1,0,3,5,6,5,3,2,-1] },
+    { name: 'Cielo', bpm: 112, root: 55, scale: [0,2,4,7,9], wave: 'triangle', notes: [0,2,3,4,3,2,1,-1,2,3,4,3,2,1,0,-1] },
+    { name: 'Ciudad', bpm: 138, root: 49, scale: [0,2,3,5,7,8,10], wave: 'triangle', notes: [0,3,-1,4,2,5,-1,3,0,4,-1,6,5,3,2,-1] },
+    { name: 'Cueva', bpm: 84, root: 47, scale: [0,1,5,7,10], wave: 'sine', notes: [0,-1,1,3,-1,2,1,-1,0,-1,4,3,-1,1,0,-1] },
+    { name: 'Isla', bpm: 116, root: 53, scale: [0,2,4,7,9], wave: 'triangle', notes: [0,2,4,2,3,1,2,-1,0,3,4,3,2,1,0,-1] },
+    { name: 'Montaña', bpm: 100, root: 50, scale: [0,2,5,7,9], wave: 'triangle', notes: [0,1,3,4,3,2,1,-1,0,2,4,3,2,1,0,-1] },
+    { name: 'Fondo marino', bpm: 82, root: 48, scale: [0,2,3,7,9], wave: 'sine', notes: [0,-1,2,3,4,3,1,-1,0,2,4,3,2,1,0,-1] }
+  ];
+  let audioEnabled = safeStorageGet('fakesnake_audio_enabled', 'true') !== 'false';
+  let audioVolume = Math.max(0, Math.min(100, Number(safeStorageGet('fakesnake_audio_volume', '35')) || 0));
+  let audioContext = null;
+  let musicBus = null;
+  let effectsBus = null;
+  let audioTimer = null;
+  let audioStep = 0;
+  let nextNoteTime = 0;
+  let audioLevel = 0;
+
+  function updateAudioControls() {
+    ui.audioToggle.textContent = audioEnabled ? '🔊 Sonido activado' : '🔇 Sonido desactivado';
+    ui.audioToggle.setAttribute('aria-pressed', String(audioEnabled));
+    ui.audioVolume.value = String(audioVolume);
+    if (audioContext) {
+      effectsBus.gain.setTargetAtTime(audioEnabled ? audioVolume / 100 : 0, audioContext.currentTime, .025);
+      musicBus.gain.setTargetAtTime(audioEnabled && gameState === 'playing' && !document.hidden
+        ? audioVolume / 100 : 0, audioContext.currentTime, .035);
+    }
+  }
+
+  function startAudio() {
+    if (!audioEnabled || audioVolume === 0) return;
+    const Context = window.AudioContext || window.webkitAudioContext;
+    if (!Context) {
+      ui.audioToggle.textContent = 'Audio no disponible';
+      ui.audioToggle.disabled = true;
+      return;
+    }
+    try {
+      if (!audioContext) {
+        audioContext = new Context();
+        musicBus = audioContext.createGain();
+        effectsBus = audioContext.createGain();
+        musicBus.connect(audioContext.destination);
+        effectsBus.connect(audioContext.destination);
+      }
+      if (audioContext.state === 'suspended') void audioContext.resume().catch(() => {});
+      updateAudioControls();
+    } catch (error) {
+      ui.audioToggle.textContent = 'Audio no disponible';
+      ui.audioToggle.disabled = true;
+    }
+  }
+
+  function tone(frequency, when, duration, strength, wave, destination, glideTo) {
+    if (!audioContext || audioContext.state === 'closed') return;
+    const oscillator = audioContext.createOscillator();
+    const envelope = audioContext.createGain();
+    oscillator.type = wave;
+    oscillator.frequency.setValueAtTime(frequency, when);
+    if (glideTo) oscillator.frequency.exponentialRampToValueAtTime(glideTo, when + duration);
+    envelope.gain.setValueAtTime(.0001, when);
+    envelope.gain.exponentialRampToValueAtTime(Math.max(.001, strength), when + Math.min(.025, duration / 4));
+    envelope.gain.exponentialRampToValueAtTime(.0001, when + duration);
+    oscillator.connect(envelope);
+    envelope.connect(destination);
+    oscillator.start(when);
+    oscillator.stop(when + duration + .02);
+    oscillator.onended = () => { oscillator.disconnect(); envelope.disconnect(); };
+  }
+
+  function midiFrequency(note) { return 440 * Math.pow(2, (note - 69) / 12); }
+
+  function scheduleMusicStep(when) {
+    const theme = MUSIC_THEMES[audioLevel - 1];
+    const beat = 60 / theme.bpm / 2;
+    const step = audioStep % theme.notes.length;
+    const degree = theme.notes[step];
+    if (degree >= 0) {
+      const pitch = theme.root + 12 + theme.scale[degree];
+      tone(midiFrequency(pitch), when, beat * .85, .12, theme.wave, musicBus);
+    }
+    if (step % 4 === 0) {
+      tone(midiFrequency(theme.root - 12 + theme.scale[step === 8 ? 2 : 0]), when,
+        beat * 3.5, .07, 'sine', musicBus);
+    }
+    audioStep += 1;
+    nextNoteTime += beat;
+  }
+
+  function syncMusic() {
+    if (!audioContext) return;
+    const shouldPlay = audioEnabled && audioVolume > 0 && gameState === 'playing' && !document.hidden;
+    if (!shouldPlay) {
+      if (audioTimer) {
+        clearInterval(audioTimer);
+        audioTimer = null;
+        musicBus.gain.setTargetAtTime(0, audioContext.currentTime, .035);
+      }
+      return;
+    }
+    if (audioTimer && audioLevel === currentLevel) return;
+    if (audioTimer) clearInterval(audioTimer);
+    audioLevel = currentLevel;
+    audioStep = 0;
+    nextNoteTime = audioContext.currentTime + .07;
+    musicBus.gain.setTargetAtTime(audioVolume / 100, audioContext.currentTime, .035);
+    const schedule = () => {
+      if (audioContext.state !== 'running') return;
+      while (nextNoteTime < audioContext.currentTime + .16) scheduleMusicStep(nextNoteTime);
+    };
+    schedule();
+    audioTimer = setInterval(schedule, 70);
+  }
+
+  function playSound(kind) {
+    if (!audioContext || !audioEnabled || audioVolume === 0 || audioContext.state !== 'running') return;
+    const at = audioContext.currentTime + .01;
+    if (kind === 'collect') {
+      tone(660, at, .12, .18, 'sine', effectsBus, 880);
+      tone(990, at + .09, .18, .13, 'sine', effectsBus);
+    } else if (kind === 'open') {
+      [523, 659, 784].forEach((note, index) => tone(note, at + index * .085, .27, .13, 'triangle', effectsBus));
+    } else if (kind === 'win') {
+      [523, 659, 784, 1047].forEach((note, index) => tone(note, at + index * .12, .3, .15, 'triangle', effectsBus));
+    } else if (kind === 'lose') {
+      tone(330, at, .42, .19, 'triangle', effectsBus, 110);
+    } else if (kind === 'correct') {
+      tone(587, at, .12, .15, 'sine', effectsBus);
+      tone(880, at + .11, .19, .15, 'sine', effectsBus);
+    } else if (kind === 'wrong') {
+      tone(310, at, .25, .15, 'triangle', effectsBus, 230);
+    }
+  }
 
   function createSessionId() {
     if (window.crypto && typeof window.crypto.randomUUID === 'function') {
@@ -2222,6 +2384,9 @@
         if (collected.size === activeTypes.length) {
           exit.open = true;
           ui.status.textContent = 'Verificación completa. La salida superior está abierta.';
+          playSound('open');
+        } else {
+          playSound('collect');
         }
         updateUI();
         void trackEvent('item_collect', {
@@ -2294,6 +2459,7 @@
 
   function win() {
     if (gameState !== 'playing') return;
+    playSound('win');
     gameState = 'won';
     elapsed = (performance.now() - startTime) / 1000;
     savedSnakeLength = Math.min(LEVEL_COUNT + 2, savedSnakeLength + 1);
@@ -2328,6 +2494,7 @@
 
   function lose() {
     if (gameState !== 'playing') return;
+    playSound('lose');
     gameState = 'lost';
     elapsed = (performance.now() - startTime) / 1000;
     livesRemaining = Math.max(0, livesRemaining - 1);
@@ -2422,6 +2589,7 @@
 
     const question = quizQuestions[quizIndex];
     const isCorrect = selectedAnswer === question.answer;
+    playSound(isCorrect ? 'correct' : 'wrong');
     quizAnswered = true;
     if (isCorrect) quizScore += 1;
     quizResponses.push({
@@ -2556,6 +2724,8 @@
     setGameControlsEnabled(true);
     ui.pauseBtn.textContent = 'Pausar';
     buildLevel();
+    startAudio();
+    syncMusic();
     canvas.focus({ preventScroll: true });
   }
 
@@ -5940,6 +6110,7 @@
   function render(now) {
     const delta = Math.min(100, now - lastFrame);
     lastFrame = now;
+    syncMusic();
 
     if (gameState === 'playing') {
       elapsed = (now - startTime) / 1000;
@@ -6080,6 +6251,21 @@
   ui.pauseBtn.addEventListener('click', togglePause);
   ui.resetBtn.addEventListener('click', restartCurrentLevel);
   ui.restartGameBtn.addEventListener('click', restartWholeGame);
+  ui.audioToggle.addEventListener('click', () => {
+    audioEnabled = !audioEnabled;
+    safeStorageSet('fakesnake_audio_enabled', String(audioEnabled));
+    if (audioEnabled) startAudio();
+    updateAudioControls();
+    syncMusic();
+  });
+  ui.audioVolume.addEventListener('input', () => {
+    audioVolume = Number(ui.audioVolume.value);
+    safeStorageSet('fakesnake_audio_volume', String(audioVolume));
+    if (audioVolume > 0 && audioEnabled) startAudio();
+    updateAudioControls();
+    syncMusic();
+  });
+  document.addEventListener('visibilitychange', syncMusic);
 
   if (window.location.protocol === 'file:') {
     document.querySelectorAll('.offline-download').forEach(link => { link.hidden = true; });
@@ -6107,6 +6293,7 @@
   updateUI();
   const restoredTrackingSession = !offlineMode && restoreTrackingSession();
   updateLivesUI();
+  updateAudioControls();
   if (restoredTrackingSession && livesRemaining <= 0) {
     showStoredOutOfLives();
   } else if (restoredTrackingSession || offlineMode) {
