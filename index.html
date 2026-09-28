@@ -5739,12 +5739,20 @@
         const length = Math.hypot(dx, dy) || 1;
         const fromTail = (i + t) * TILE;
         const fromHead = (points.length - 1 - i - t) * TILE;
-        const envelope = Math.min(1, fromTail / (TILE * .4), fromHead / (TILE * .65));
+        const envelope = Math.min(1, fromTail / (TILE * .4))
+          * (.65 + .35 * Math.min(1, fromHead / (TILE * .65)));
         const wave = TILE * .16 * envelope * Math.sin(time * .008 - fromHead / TILE * 3.8);
         samples.push({ x: x - dy / length * wave, y: y + dx / length * wave });
       }
     }
-    samples.push(points[points.length - 1]);
+    const head = points[points.length - 1];
+    const neck = points[points.length - 2];
+    const headDx = head.x - neck.x;
+    const headDy = head.y - neck.y;
+    const headLength = Math.hypot(headDx, headDy) || 1;
+    const headWave = TILE * .16 * .65 * Math.sin(time * .008);
+    samples.push({ x: head.x - headDy / headLength * headWave,
+      y: head.y + headDx / headLength * headWave });
     return samples;
   }
 
@@ -5758,8 +5766,8 @@
       index === 0 || point.x !== all[index - 1].x || point.y !== all[index - 1].y
     );
     const head = snake[0];
-    const hx = (head.c + .5) * TILE;
-    const hy = (head.r + .5) * TILE;
+    let hx = (head.c + .5) * TILE;
+    let hy = (head.r + .5) * TILE;
     const neck = snake.find(seg => seg.r !== head.r || seg.c !== head.c);
     const facing = neck
       ? { r: head.r - neck.r, c: head.c - neck.c }
@@ -5772,6 +5780,8 @@
     if (points.length > 1) {
       const stepsPerTile = 8;
       const centerline = snakeWavePoints(points, time);
+      hx = centerline[centerline.length - 1].x;
+      hy = centerline[centerline.length - 1].y;
       const tail = centerline[0];
       const next = centerline[stepsPerTile / 2] || centerline[1];
       const dx = next.x - tail.x;
