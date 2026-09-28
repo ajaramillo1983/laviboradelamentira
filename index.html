@@ -100,6 +100,15 @@
       gap: 8px;
     }
 
+    /* El menú de inicio utiliza toda la pantalla; los controles aparecen al jugar. */
+    .game-wrap:has(#startOverlay:not(.hidden)) {
+      grid-template-rows: minmax(0, 1fr);
+    }
+
+    .game-wrap:has(#startOverlay:not(.hidden)) .game-controls {
+      display: none;
+    }
+
     .canvas-card,
     .game-controls {
       background: linear-gradient(145deg, rgba(6,24,23,.90), rgba(1,7,7,.92));
@@ -269,8 +278,8 @@
       width: min(540px, 100%);
       max-height: 100%;
       overflow-y: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(32,245,229,.45) transparent;
       background: linear-gradient(145deg, rgba(7,31,29,.97), rgba(1,8,8,.98));
       border: 1px solid rgba(32,245,229,.3);
       border-radius: 20px;
@@ -281,9 +290,12 @@
     }
 
     .modal::-webkit-scrollbar {
-      width: 0;
-      height: 0;
-      display: none;
+      width: 6px;
+    }
+
+    .modal::-webkit-scrollbar-thumb {
+      background: rgba(32,245,229,.45);
+      border-radius: 6px;
     }
 
     @keyframes modalIn {
@@ -420,6 +432,18 @@
     .offline-download[hidden] { display: none; }
 
     .offline-hint { font-size: 11px !important; }
+
+    .registration-form .modal-buttons {
+      position: sticky;
+      bottom: 0;
+      z-index: 2;
+      align-items: center;
+      padding: 7px;
+      border-radius: 12px;
+      background: rgba(3,20,19,.97);
+    }
+
+    .registration-form .offline-download { margin-top: 0; }
 
     .modal-logo {
       display: block;
@@ -826,10 +850,10 @@
                 </label>
                 <p id="trackingStatus" class="tracking-status" aria-live="polite"></p>
                 <div class="modal-buttons">
-                  <button type="submit" id="registrationSubmit" class="action primary">Continuar</button>
+                  <button type="submit" id="registrationSubmit" class="action primary">Guardar datos y continuar</button>
+                  <a class="offline-download" href="./index.html" download="La-vibora-de-la-mentira.html">⬇ Descargar juego para usar sin Internet</a>
                 </div>
               </form>
-              <a class="offline-download" href="./index.html" download="La-vibora-de-la-mentira.html">⬇ Descargar juego para usar sin Internet</a>
               <p class="ios-install hidden">En iPhone: abre esta página en Safari y selecciona Compartir → Añadir a pantalla de inicio para jugar sin conexión.</p>
             </section>
 
