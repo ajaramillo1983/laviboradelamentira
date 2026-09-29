@@ -6341,11 +6341,16 @@
     if (deferredInstallPrompt) {
       const prompt = deferredInstallPrompt;
       deferredInstallPrompt = null;
-      await prompt.prompt();
-      const result = await prompt.userChoice;
-      ui.installStatus.textContent = result.outcome === 'accepted'
-        ? 'Instalación iniciada. Verás el ícono de la serpiente en tu pantalla de inicio o escritorio.'
-        : 'Puedes instalar el juego más tarde desde el menú del navegador.';
+      ui.installStatus.textContent = 'Confirma la instalación en el diálogo del navegador.';
+      try {
+        await prompt.prompt();
+        const result = await prompt.userChoice;
+        ui.installStatus.textContent = result.outcome === 'accepted'
+          ? 'Instalación iniciada. Verás el ícono de la serpiente en tu pantalla de inicio o escritorio.'
+          : 'Puedes instalar el juego más tarde desde el menú del navegador.';
+      } catch (error) {
+        ui.installStatus.textContent = 'Si no aparece el diálogo, usa la opción Instalar del menú del navegador.';
+      }
       return;
     }
     if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
