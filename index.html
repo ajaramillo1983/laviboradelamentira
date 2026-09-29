@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#010505" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Fake Snake Game" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <title>La víbora de la mentira — Prototipo 4D</title>
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="data:image/png;base64,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" />
+  <title>Fake Snake Game — La víbora de la mentira</title>
   <style>
     :root {
       --bg: #010505;
@@ -472,6 +475,11 @@
     .offline-download:hover, .offline-download:focus-visible { border-color: var(--accent); }
     .offline-download[hidden] { display: none; }
 
+    .install-controls { margin-top: 7px; }
+    .install-controls[hidden] { display: none; }
+    .install-controls button { min-height: 38px; padding: 7px 13px; }
+    .install-controls p { margin: 5px 0 0; color: #c9efeb; font-size: 11px; }
+
     .offline-hint { font-size: 11px !important; }
 
     .registration-form .modal-buttons {
@@ -917,6 +925,10 @@
               <button type="button" id="audioMenuPreview" class="action">▶ Probar sonido</button>
               <span id="audioPreviewStatus" class="audio-preview-status" role="status" aria-live="polite"></span>
             </div>
+            <div class="install-controls">
+              <button type="button" id="installBtn" class="action primary">📲 Instalar con ícono para jugar sin Internet</button>
+              <p id="installStatus" role="status" aria-live="polite"></p>
+            </div>
           </div>
         </div>
 
@@ -1273,6 +1285,8 @@
     audioPreviewStatus: document.getElementById('audioPreviewStatus'),
     audioTest: document.getElementById('audioTest'),
     audioStatus: document.getElementById('audioStatus'),
+    installBtn: document.getElementById('installBtn'),
+    installStatus: document.getElementById('installStatus'),
     audioVolume: document.getElementById('audioVolume'),
     status: document.getElementById('status'),
     objectiveItems: document.getElementById('objectiveItems'),
@@ -1376,6 +1390,7 @@
   let snakeInterval = 430;
   let graceUntil = 0;
   let trackingChain = Promise.resolve();
+  let deferredInstallPrompt = null;
 
   // Música original sintetizada: las diez variaciones viven en este HTML descargable.
   // Cada motivo cambia escala, pulso y timbre según el escenario.
@@ -6253,7 +6268,7 @@
       if (handlePopupKeys(event, k, choices)) return;
     }
     if (!ui.startOverlay.classList.contains('hidden') && !ui.gameMenuPanel.classList.contains('hidden')) {
-      if ([ui.audioMenuToggle, ui.audioMenuPreview].includes(document.activeElement) && (k === 'enter' || k === ' ')) return;
+      if ([ui.audioMenuToggle, ui.audioMenuPreview, ui.installBtn].includes(document.activeElement) && (k === 'enter' || k === ' ')) return;
       const avatars = Array.from(document.querySelectorAll('.avatar-card'));
       if (handlePopupKeys(event, k, avatars, ui.startBtn)) {
         const focused = document.activeElement;
@@ -6322,6 +6337,34 @@
   ui.audioMenuToggle.addEventListener('click', toggleAudio);
   ui.audioMenuPreview.addEventListener('click', previewAudio);
   ui.audioTest.addEventListener('click', previewAudio);
+  ui.installBtn.addEventListener('click', async () => {
+    if (deferredInstallPrompt) {
+      const prompt = deferredInstallPrompt;
+      deferredInstallPrompt = null;
+      await prompt.prompt();
+      const result = await prompt.userChoice;
+      ui.installStatus.textContent = result.outcome === 'accepted'
+        ? 'Instalación iniciada. Verás el ícono de la serpiente en tu pantalla de inicio o escritorio.'
+        : 'Puedes instalar el juego más tarde desde el menú del navegador.';
+      return;
+    }
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+      ui.installStatus.textContent = 'En Safari, toca Compartir → Agregar a pantalla de inicio.';
+    } else if (/Android/.test(navigator.userAgent)) {
+      ui.installStatus.textContent = 'En Chrome, abre el menú ⋮ y elige Instalar aplicación o Agregar a pantalla de inicio.';
+    } else {
+      ui.installStatus.textContent = 'En Chrome o Edge, usa Instalar en la barra de direcciones o en el menú ⋮.';
+    }
+  });
+  window.addEventListener('beforeinstallprompt', event => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+  });
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    ui.installStatus.textContent = 'Juego instalado con el ícono de la serpiente.';
+    ui.installBtn.hidden = true;
+  });
   ui.audioVolume.addEventListener('input', () => {
     audioVolume = Number(ui.audioVolume.value);
     safeStorageSet('fakesnake_audio_volume', String(audioVolume));
@@ -6336,6 +6379,10 @@
 
   if (window.location.protocol === 'file:') {
     document.querySelectorAll('.offline-download').forEach(link => { link.hidden = true; });
+    ui.installBtn.closest('.install-controls').hidden = true;
+  } else if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) {
+    ui.installBtn.hidden = true;
+    ui.installStatus.textContent = 'Juego instalado: funciona sin Internet.';
   }
   if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
     document.querySelectorAll('.ios-install').forEach(hint => hint.classList.remove('hidden'));

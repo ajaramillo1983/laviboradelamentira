@@ -1,5 +1,5 @@
-const CACHE_NAME = 'lavibora-offline-v3';
-const APP_FILES = ['./index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+const CACHE_NAME = 'lavibora-offline-v4';
+const APP_FILES = ['./index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-64.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES)));
