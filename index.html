@@ -951,7 +951,7 @@
             <p id="messageStats"></p>
             <div class="modal-buttons">
               <button type="button" id="retryBtn" class="action primary">Jugar nuevamente</button>
-              <button type="button" id="menuBtn" class="action">Elegir avatar</button>
+              <button type="button" id="menuBtn" class="action hidden">Salir del juego</button>
             </div>
           </div>
         </div>
@@ -1752,6 +1752,7 @@
     ui.retryBtn.textContent = livesRemaining > 0 ? 'Reintentar nivel' : 'Volver al nivel 1';
     menuAction = 'exit';
     ui.menuBtn.textContent = 'Salir del juego';
+    ui.menuBtn.classList.remove('hidden');
   }
 
   function startNewRun(detail = {}) {
@@ -2554,8 +2555,7 @@
       ui.retryBtn.textContent = 'Responder el cuestionario final';
       ui.messageStats.textContent += ' Superaste los 10 niveles. Ahora demuestra lo que aprendiste.';
     }
-    menuAction = 'avatar';
-    ui.menuBtn.textContent = 'Elegir avatar';
+    ui.menuBtn.classList.add('hidden');
     ui.messageOverlay.classList.remove('hidden');
     focusPopupButton(ui.retryBtn);
     ui.status.textContent = 'Nivel superado.';
@@ -2766,8 +2766,7 @@
 
   function showMenu() {
     gameState = 'menu';
-    menuAction = 'avatar';
-    ui.menuBtn.textContent = 'Elegir avatar';
+    ui.menuBtn.classList.add('hidden');
     ui.itemOverlay.classList.add('hidden');
     ui.messageOverlay.classList.add('hidden');
     ui.quizOverlay.classList.add('hidden');
@@ -6260,7 +6259,7 @@
 
     const k = String(event.key || '').toLowerCase();
     if (!ui.itemOverlay.classList.contains('hidden') && handlePopupKeys(event, k, [ui.continueBtn])) return;
-    if (!ui.messageOverlay.classList.contains('hidden') && handlePopupKeys(event, k, [ui.retryBtn, ui.menuBtn])) return;
+    if (!ui.messageOverlay.classList.contains('hidden') && handlePopupKeys(event, k, [ui.retryBtn, ui.menuBtn].filter(button => !button.classList.contains('hidden')))) return;
     if (!ui.quizOverlay.classList.contains('hidden')) {
       const choices = !ui.quizOptions.classList.contains('hidden') && !quizAnswered
         ? [ui.quizTrueBtn, ui.quizFalseBtn]
