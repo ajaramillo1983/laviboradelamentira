@@ -6314,9 +6314,15 @@
       document.querySelectorAll('.avatar-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
     }
+    card.setAttribute('aria-pressed', String(card.dataset.avatar === selectedAvatar));
     card.addEventListener('click', () => {
       selectedAvatar = card.dataset.avatar;
-      document.querySelectorAll('.avatar-card').forEach(c => c.classList.toggle('selected', c === card));
+      document.querySelectorAll('.avatar-card').forEach(c => {
+        const chosen = c === card;
+        c.classList.toggle('selected', chosen);
+        c.setAttribute('aria-pressed', String(chosen));
+      });
+      focusPopupButton(card);
     });
   });
 
