@@ -850,6 +850,35 @@
       .modal-buttons { margin-top: 4px; }
     }
 
+    /* All popup content fits the available viewport, including short windows. */
+    .modal { overflow: hidden; }
+    .modal-content { display: flow-root; }
+    #startOverlay .modal { width: min(800px, 100%); padding: 12px 16px; }
+    #startOverlay .logo-frame { width: min(230px, 100%); margin-bottom: 5px; }
+    #startOverlay .modal-logo { max-height: min(14dvh, 105px); }
+    #startOverlay h2 { font-size: clamp(18px, 2.5vw, 24px); }
+    #startOverlay p { font-size: 13px; line-height: 1.35; margin: 5px 0; }
+    #startOverlay .audio-controls { gap: 6px; margin-top: 6px; }
+    .audio-tools { display: inline-flex; align-items: center; gap: 6px; }
+    #startOverlay .audio-controls button { min-height: 32px; padding: 5px 8px; font-size: 12px; }
+    #startOverlay .offline-download { margin: 0; padding: 5px 8px; min-height: 30px; font-size: 11px; }
+    .audio-preview-status:empty, #installStatus:empty, .tracking-status:empty { display: none; }
+    #startOverlay .install-controls { margin-top: 6px; }
+    #startOverlay .install-controls button { min-height: 32px; padding: 5px 10px; font-size: 12px; }
+    .registration-form .modal-buttons { position: static; padding: 0; background: transparent; }
+    @media (max-width: 600px) {
+      #startOverlay .modal { padding: 10px; }
+      #startOverlay .modal-logo { max-height: min(11dvh, 80px); }
+      #startOverlay p { font-size: 12px; }
+    }
+    @media (max-height: 520px) and (min-width: 601px) {
+      #startOverlay .modal-content { display: grid; grid-template-columns: 140px minmax(0, 1fr); column-gap: 14px; }
+      #startOverlay .logo-frame { grid-column: 1; grid-row: 1 / 3; align-self: center; }
+      #gameIntroduction, #registrationPanel, #gameMenuPanel { grid-column: 2; }
+      #startOverlay .audio-controls, #startOverlay .install-controls { grid-column: 1 / -1; }
+      #startOverlay .modal-logo { max-height: 120px; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *,
       *::before,
@@ -902,9 +931,8 @@
                   <span>Acepto el registro de mis datos y de mi avance en el juego con fines de seguimiento educativo.</span>
                 </label>
                 <p id="trackingStatus" class="tracking-status" aria-live="polite"></p>
-                <div class="modal-buttons">
+            <div class="modal-buttons">
                   <button type="submit" id="registrationSubmit" class="action primary">Guardar datos y continuar</button>
-                  <a class="offline-download" href="./index.html" download="Fake-Snake-Game.html">⬇ Descargar juego para usar sin Internet</a>
                 </div>
               </form>
               <p class="ios-install hidden">En iPhone: abre esta página en Safari y selecciona Compartir → Añadir a pantalla de inicio para jugar sin conexión.</p>
@@ -922,12 +950,14 @@
               <button type="button" id="startBtn" class="action primary">Comenzar nivel</button>
             </div>
             <p id="offlineHint" class="offline-hint hidden">Modo sin conexión: puedes jugar sin registro. El avance se guarda en este navegador.</p>
-            <a class="offline-download" href="./index.html" download="Fake-Snake-Game.html">⬇ Descargar juego para usar sin Internet</a>
             <p class="ios-install hidden">En iPhone: abre esta página en Safari y selecciona Compartir → Añadir a pantalla de inicio para jugar sin conexión.</p>
             </section>
             <div class="audio-controls" aria-label="Audio del juego">
               <button type="button" id="audioMenuToggle" class="action" aria-pressed="true">🔊 Sonido activado</button>
-              <button type="button" id="audioMenuPreview" class="action">▶ Probar sonido</button>
+              <span class="audio-tools">
+                <button type="button" id="audioMenuPreview" class="action">▶ Probar sonido</button>
+                <a class="offline-download" href="./index.html" download="Fake-Snake-Game.html" title="Descargar el juego completo para jugar sin Internet">⬇ Descargar juego</a>
+              </span>
               <span id="audioPreviewStatus" class="audio-preview-status" role="status" aria-live="polite"></span>
             </div>
             <div class="install-controls">
@@ -1021,7 +1051,46 @@
   const TRACKING_URL = 'https://script.google.com/macros/s/AKfycbytxb5RL0u_kkdZt-8NCJxd0dxolTxPTCk_p2dK6WGvjQZlfMzA1POQI9gHkfj6sc1UvQ/exec';
   // Los archivos descargados y las sesiones sin red funcionan sin registro ni telemetría.
   const offlineMode = window.location.protocol === 'file:' || !navigator.onLine;
-  const GAME_VERSION = '2026.09.30.2';
+  // Measure each visible popup at its natural size, then scale it to the window.
+  // The full text and every button stay visible without a scrollbar.
+  document.querySelectorAll('.modal').forEach(modal => {
+    const content = document.createElement('div');
+    content.className = 'modal-content';
+    while (modal.firstChild) content.appendChild(modal.firstChild);
+    modal.appendChild(content);
+  });
+  function fitPopups() {
+    document.querySelectorAll('.overlay:not(.hidden) .modal').forEach(modal => {
+      const overlay = modal.closest('.overlay');
+      const content = modal.querySelector('.modal-content');
+      const overlayStyle = getComputedStyle(overlay);
+      const modalStyle = getComputedStyle(modal);
+      content.style.zoom = '1';
+      const availableHeight = overlay.clientHeight
+        - parseFloat(overlayStyle.paddingTop) - parseFloat(overlayStyle.paddingBottom)
+        - parseFloat(modalStyle.paddingTop) - parseFloat(modalStyle.paddingBottom)
+        - parseFloat(modalStyle.borderTopWidth) - parseFloat(modalStyle.borderBottomWidth);
+      const availableWidth = modal.clientWidth
+        - parseFloat(modalStyle.paddingLeft) - parseFloat(modalStyle.paddingRight);
+      const scale = Math.min(1, Math.max(1, availableHeight) / Math.max(1, content.scrollHeight),
+        Math.max(1, availableWidth) / Math.max(1, content.scrollWidth));
+      content.style.zoom = String(scale);
+    });
+  }
+  let popupFitFrame = 0;
+  function schedulePopupFit() {
+    cancelAnimationFrame(popupFitFrame);
+    popupFitFrame = requestAnimationFrame(fitPopups);
+  }
+  new MutationObserver(schedulePopupFit).observe(document.querySelector('.app'), {
+    childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class', 'hidden']
+  });
+  window.addEventListener('resize', schedulePopupFit);
+  window.visualViewport?.addEventListener('resize', schedulePopupFit);
+  document.querySelectorAll('.modal img').forEach(img => img.addEventListener('load', schedulePopupFit));
+  document.fonts?.ready.then(schedulePopupFit);
+  schedulePopupFit();
+  const GAME_VERSION = '2026.09.30.3';
   const SESSION_STORAGE_KEY = 'lavibora_tracking_session';
   const TRACKING_QUEUE_KEY = 'lavibora_tracking_queue';
   const TOTAL_LIVES = 3;
