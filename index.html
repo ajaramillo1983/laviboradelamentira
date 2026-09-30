@@ -1021,7 +1021,7 @@
   const TRACKING_URL = 'https://script.google.com/macros/s/AKfycbytxb5RL0u_kkdZt-8NCJxd0dxolTxPTCk_p2dK6WGvjQZlfMzA1POQI9gHkfj6sc1UvQ/exec';
   // Los archivos descargados y las sesiones sin red funcionan sin registro ni telemetría.
   const offlineMode = window.location.protocol === 'file:' || !navigator.onLine;
-  const GAME_VERSION = '2026.09.30.1';
+  const GAME_VERSION = '2026.09.30.2';
   const SESSION_STORAGE_KEY = 'lavibora_tracking_session';
   const TRACKING_QUEUE_KEY = 'lavibora_tracking_queue';
   const TOTAL_LIVES = 3;
@@ -1771,6 +1771,7 @@
   }
 
   function configureLossOverlay() {
+    ui.messageTitle.classList.remove('hidden');
     const lostLives = TOTAL_LIVES - livesRemaining;
     const messageIndex = Math.max(0, Math.min(LIFE_LOSS_MESSAGES.length - 1, lostLives - 1));
     ui.messageIcon.textContent = livesRemaining > 0 ? '💔' : '⛔';
@@ -2580,7 +2581,8 @@
     savedSnakeLength = Math.min(LEVEL_COUNT + 2, savedSnakeLength + 1);
     safeStorageSet('fakesnake_snake_length', String(savedSnakeLength));
     ui.messageIcon.textContent = '✅';
-    ui.messageTitle.textContent = currentLevel === LEVEL_COUNT ? 'Mensaje final' : 'Mensaje de superación';
+    ui.messageTitle.textContent = '';
+    ui.messageTitle.classList.add('hidden');
     ui.messageText.textContent = LEVEL_COMPLETION_MESSAGES[currentLevel - 1];
     ui.messageStats.textContent = `Completaste el nivel ${currentLevel} en ${elapsed.toFixed(1)} s. La víbora tiene ${savedSnakeLength} segmentos.`;
     if (currentLevel < LEVEL_COUNT) {
