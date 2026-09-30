@@ -850,6 +850,31 @@
       .modal-buttons { margin-top: 4px; }
     }
 
+    /* The maze takes the available space; status and controls stay compact. */
+    .game-wrap { grid-template-rows: auto minmax(0, 1fr) auto; gap: 4px; }
+    .game-header { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 2px; }
+    .game-header .level-progress, .game-header .lives-indicator { padding: 3px 9px; font-size: 12px; min-width: 0; }
+    .game-wrap:has(#startOverlay:not(.hidden)) .game-header { display: none; }
+    .canvas-card { padding: 3px; }
+    .game-controls { padding: 4px 6px; gap: 4px; box-shadow: none; }
+    .game-controls .controls { grid-template-columns: repeat(3, 36px); gap: 3px; }
+    .game-controls .controls button { width: 36px; min-height: 36px; font-size: 18px; }
+    .game-toolbar { display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; }
+    .game-toolbar .actions, .game-toolbar .audio-controls { display: contents; }
+    .game-toolbar button.action { min-height: 28px; padding: 4px 7px; font-size: 11px; white-space: nowrap; }
+    .game-toolbar input { width: 65px; min-width: 0; accent-color: var(--accent); }
+    .game-toolbar .audio-preview-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    @media (max-width: 420px) {
+      .game-toolbar { gap: 3px; }
+      .game-toolbar button.action { padding: 4px 5px; font-size: 10px; }
+      .game-toolbar input { width: 44px; }
+    }
+    @media (max-height: 500px) {
+      .game-controls .controls { grid-template-columns: repeat(4, 36px); }
+      .game-controls .controls .empty { display: none; }
+      .game-controls .controls [data-dir="left"] { order: -1; }
+    }
+
     /* All popup content fits the available viewport, including short windows. */
     .modal { overflow: hidden; }
     .modal-content { display: flow-root; }
@@ -894,6 +919,10 @@
 
 
     <section class="game-wrap">
+      <header class="game-header" aria-label="Estado de la partida">
+        <span id="levelProgress" class="level-progress" aria-live="polite">Nivel 1 de 10</span>
+        <div id="livesIndicator" class="lives-indicator" aria-live="polite">Vidas: ❤️ ❤️ ❤️</div>
+      </header>
       <div class="canvas-card">
         <canvas id="game" tabindex="0" width="780" height="1020" aria-label="Laberinto de Fake Snake Game"></canvas>
 
@@ -1014,10 +1043,6 @@
         <div id="status" class="sr-only" aria-live="polite">Elige un avatar y pulsa «Comenzar nivel».</div>
         <div id="objectiveItems" class="sr-only"></div>
         <span id="objExit" class="sr-only">Salida bloqueada</span>
-        <div class="game-status-row">
-          <span id="levelProgress" class="level-progress" aria-live="polite">Nivel 1 de 10</span>
-          <div id="livesIndicator" class="lives-indicator" aria-live="polite">Vidas: ❤️ ❤️ ❤️</div>
-        </div>
 
         <div class="controls" aria-label="Controles táctiles">
           <button class="empty" tabindex="-1" aria-hidden="true"></button>
@@ -1028,17 +1053,19 @@
           <button data-dir="right" aria-label="Derecha">▶</button>
         </div>
 
+        <div class="game-toolbar" aria-label="Opciones de la partida">
         <div class="actions">
           <button type="button" id="pauseBtn" class="action">Pausar</button>
-          <button type="button" id="resetBtn" class="action">Reiniciar nivel</button>
-          <button type="button" id="restartGameBtn" class="action danger">Reiniciar juego</button>
+          <button type="button" id="resetBtn" class="action" title="Reiniciar nivel" aria-label="Reiniciar nivel">↻ Nivel</button>
+          <button type="button" id="restartGameBtn" class="action danger" title="Reiniciar juego" aria-label="Reiniciar juego">↻ Juego</button>
         </div>
         <div class="audio-controls" aria-label="Audio del juego">
-          <button type="button" id="audioToggle" class="action" aria-pressed="true">🔊 Sonido activado</button>
-          <button type="button" id="audioTest" class="action">▶ Probar</button>
-          <label for="audioVolume">Volumen</label>
+          <button type="button" id="audioToggle" class="action" aria-pressed="true" title="Activar o desactivar sonido" aria-label="Sonido activado">🔊</button>
+          <button type="button" id="audioTest" class="action" title="Probar sonido" aria-label="Probar sonido">▶</button>
+          <label for="audioVolume" class="sr-only">Volumen</label>
           <input id="audioVolume" type="range" min="0" max="100" value="65" aria-label="Volumen del juego" />
           <span id="audioStatus" class="audio-preview-status" role="status" aria-live="polite"></span>
+        </div>
         </div>
       </div>
     </section>
@@ -1060,6 +1087,7 @@
     modal.appendChild(content);
   });
   function fitPopups() {
+    fitGameBoard();
     document.querySelectorAll('.overlay:not(.hidden) .modal').forEach(modal => {
       const overlay = modal.closest('.overlay');
       const content = modal.querySelector('.modal-content');
@@ -1078,6 +1106,16 @@
     });
   }
   let popupFitFrame = 0;
+  function fitGameBoard() {
+    const card = document.querySelector('.canvas-card');
+    const board = document.getElementById('game');
+    const style = getComputedStyle(card);
+    const width = card.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const height = card.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+    const boardWidth = Math.max(1, Math.min(width, height * 13 / 17));
+    board.style.width = `${boardWidth}px`;
+    board.style.height = `${boardWidth * 17 / 13}px`;
+  }
   function schedulePopupFit() {
     cancelAnimationFrame(popupFitFrame);
     popupFitFrame = requestAnimationFrame(fitPopups);
@@ -1086,11 +1124,12 @@
     childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class', 'hidden']
   });
   window.addEventListener('resize', schedulePopupFit);
+  new ResizeObserver(schedulePopupFit).observe(document.querySelector('.canvas-card'));
   window.visualViewport?.addEventListener('resize', schedulePopupFit);
   document.querySelectorAll('.modal img').forEach(img => img.addEventListener('load', schedulePopupFit));
   document.fonts?.ready.then(schedulePopupFit);
   schedulePopupFit();
-  const GAME_VERSION = '2026.09.30.3';
+  const GAME_VERSION = '2026.09.30.4';
   const SESSION_STORAGE_KEY = 'lavibora_tracking_session';
   const TRACKING_QUEUE_KEY = 'lavibora_tracking_queue';
   const TOTAL_LIVES = 3;
@@ -1520,7 +1559,10 @@
 
   function updateAudioControls() {
     for (const button of [ui.audioToggle, ui.audioMenuToggle]) {
-      button.textContent = audioEnabled ? '🔊 Sonido activado' : '🔇 Sonido desactivado';
+      button.textContent = button === ui.audioToggle
+        ? (audioEnabled ? '🔊' : '🔇')
+        : (audioEnabled ? '🔊 Sonido activado' : '🔇 Sonido desactivado');
+      button.setAttribute('aria-label', audioEnabled ? 'Sonido activado' : 'Sonido desactivado');
       button.setAttribute('aria-pressed', String(audioEnabled));
     }
     ui.audioVolume.value = String(audioVolume);
