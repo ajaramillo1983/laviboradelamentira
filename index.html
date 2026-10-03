@@ -23,6 +23,8 @@
     }
 
     * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    button, input, label { touch-action: manipulation; }
 
     html,
     body {
@@ -37,7 +39,7 @@
 
     body {
       margin: 0;
-      height: 100vh;
+      height: var(--app-height, 100vh);
       min-height: 0;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text);
@@ -54,7 +56,7 @@
     }
 
     @supports (height: 100dvh) {
-      body { height: 100dvh; }
+      body { height: var(--app-height, 100dvh); }
     }
 
     @supports (padding: max(0px)) {
@@ -904,6 +906,23 @@
       #startOverlay .modal-logo { max-height: 120px; }
     }
 
+    /* iOS zooms focused text fields below 16px. Keep registration unscaled. */
+    .form-field input { font-size: 16px; }
+    .modal[data-registration] {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y pinch-zoom;
+    }
+    @media (max-width: 600px) {
+      body {
+        padding-top: max(6px, env(safe-area-inset-top));
+        padding-right: max(6px, env(safe-area-inset-right));
+        padding-bottom: max(6px, env(safe-area-inset-bottom));
+        padding-left: max(6px, env(safe-area-inset-left));
+      }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *,
       *::before,
@@ -1093,6 +1112,11 @@
       const overlayStyle = getComputedStyle(overlay);
       const modalStyle = getComputedStyle(modal);
       content.style.zoom = '1';
+      const registration = modal.querySelector('#registrationPanel:not(.hidden)');
+      modal.toggleAttribute('data-registration', Boolean(registration));
+      // Scaling an editable form defeats iOS's 16px focus-zoom protection.
+      // Allow this panel to scroll while the keyboard is open instead.
+      if (registration) return;
       const availableHeight = overlay.clientHeight
         - parseFloat(overlayStyle.paddingTop) - parseFloat(overlayStyle.paddingBottom)
         - parseFloat(modalStyle.paddingTop) - parseFloat(modalStyle.paddingBottom)
@@ -1117,18 +1141,25 @@
   }
   function schedulePopupFit() {
     cancelAnimationFrame(popupFitFrame);
-    popupFitFrame = requestAnimationFrame(fitPopups);
+    popupFitFrame = requestAnimationFrame(() => {
+      const viewport = window.visualViewport;
+      // Multiply by scale so manual pinch zoom does not resize the game itself.
+      const height = viewport ? viewport.height * viewport.scale : window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', `${Math.round(height)}px`);
+      fitPopups();
+    });
   }
   new MutationObserver(schedulePopupFit).observe(document.querySelector('.app'), {
     childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class', 'hidden']
   });
   window.addEventListener('resize', schedulePopupFit);
+  window.addEventListener('orientationchange', schedulePopupFit);
   new ResizeObserver(schedulePopupFit).observe(document.querySelector('.canvas-card'));
   window.visualViewport?.addEventListener('resize', schedulePopupFit);
   document.querySelectorAll('.modal img').forEach(img => img.addEventListener('load', schedulePopupFit));
   document.fonts?.ready.then(schedulePopupFit);
   schedulePopupFit();
-  const GAME_VERSION = '2026.09.30.5';
+  const GAME_VERSION = '2026.10.03.1';
   const SESSION_STORAGE_KEY = 'lavibora_tracking_session';
   const TRACKING_QUEUE_KEY = 'lavibora_tracking_queue';
   const TOTAL_LIVES = 3;
