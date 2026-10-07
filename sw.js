@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lavibora-offline-v15';
+const CACHE_NAME = 'lavibora-offline-v16';
 const APP_FILES = ['./index.html', './logo.webp', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-64.png'];
 
 const CONTROLS_STYLE = `<style id="compat-controls-v13">
