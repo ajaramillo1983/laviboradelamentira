@@ -1159,7 +1159,7 @@
   document.querySelectorAll('.modal img').forEach(img => img.addEventListener('load', schedulePopupFit));
   document.fonts?.ready.then(schedulePopupFit);
   schedulePopupFit();
-  const GAME_VERSION = '2026.10.07.4';
+  const GAME_VERSION = '2026.10.07.5';
   const SESSION_STORAGE_KEY = 'lavibora_tracking_session';
   const TRACKING_QUEUE_KEY = 'lavibora_tracking_queue';
   const TOTAL_LIVES = 3;
@@ -2363,14 +2363,11 @@
     return route;
   }
 
-  function virtualSnakeStep(segments, target, length) {
+  function virtualSnakeStep(segments, target) {
     const path = bfs(segments[0], target);
     const next = path.length > 1 ? path[1] : segments[0];
-    const moved = [{ r: next.r, c: next.c }];
-    for (let index = 1; index < length; index++) {
-      moved.push({ ...segments[Math.min(index - 1, segments.length - 1)] });
-    }
-    return moved;
+    // Cada avance añade un nuevo segmento: nueva cabeza + cuerpo anterior completo.
+    return [{ r: next.r, c: next.c }, ...segments.map(segment => ({ ...segment }))];
   }
 
   function routeSurvivesSnake(start, snakeStart, exitCell, levelItems, blocked) {
@@ -2378,8 +2375,7 @@
     if (!route.length) return false;
 
     const itemCells = new Set(levelItems.map(item => key(item.r, item.c)));
-    const snakeLength = Math.min(LEVEL_COUNT + 2, currentLevel + 2);
-    let virtualSnake = Array.from({ length: snakeLength }, () => ({ ...snakeStart }));
+    let virtualSnake = Array.from({ length: 3 }, () => ({ ...snakeStart }));
     let virtualPlayer = { ...start };
     let graceSteps = Math.max(8, 14 - currentLevel);
     const playerStepsPerSnakeMove = currentLevel <= 3 ? 4 : currentLevel <= 7 ? 3 : 2;
@@ -2404,7 +2400,7 @@
       playerSteps++;
       if (playerSteps >= playerStepsPerSnakeMove) {
         playerSteps = 0;
-        virtualSnake = virtualSnakeStep(virtualSnake, virtualPlayer, snakeLength);
+        virtualSnake = virtualSnakeStep(virtualSnake, virtualPlayer);
         if (virtualSnake.some(segment => segment.r === virtualPlayer.r && segment.c === virtualPlayer.c)) {
           return false;
         }
@@ -2496,7 +2492,9 @@
     activeTypes = VERIFICATION_ORDER.slice(0, currentLevel + 2);
     const types = activeTypes;
     const profile = difficultyProfile();
-    savedSnakeLength = Math.max(3, Math.min(savedSnakeLength, currentLevel + 2));
+    // Cada nivel comienza con la misma longitud. La víbora crecerá mientras avance.
+    savedSnakeLength = 3;
+    safeStorageSet('fakesnake_snake_length', '3');
 
     let built = false;
 
@@ -2700,11 +2698,10 @@
     if (next.r !== head.r || next.c !== head.c) {
       snakeFacing = { r: next.r - head.r, c: next.c - head.c };
     }
-    const newSnake = [{ r: next.r, c: next.c }];
-    for (let i = 1; i < savedSnakeLength; i++) {
-      newSnake.push({ ...snake[Math.min(i - 1, snake.length - 1)] });
-    }
-    snake = newSnake;
+    // Crece un segmento cada vez que logra avanzar.
+    // La nueva cabeza ocupa la siguiente casilla y se conserva todo el cuerpo anterior.
+    snake = [{ r: next.r, c: next.c }, ...snake.map(segment => ({ ...segment }))];
+    savedSnakeLength = snake.length;
 
     checkPlayerSnakeCollision();
   }
@@ -2720,7 +2717,6 @@
     playSound('win');
     gameState = 'won';
     elapsed = (performance.now() - startTime) / 1000;
-    savedSnakeLength = Math.min(LEVEL_COUNT + 2, savedSnakeLength + 1);
     safeStorageSet('fakesnake_snake_length', String(savedSnakeLength));
     ui.messageIcon.textContent = '✅';
     ui.messageTitle.textContent = '';
