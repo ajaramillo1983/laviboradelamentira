@@ -1,5 +1,5 @@
-const CACHE_NAME = 'lavibora-offline-v13';
-const APP_FILES = ['./index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-64.png'];
+const CACHE_NAME = 'lavibora-offline-v14';
+const APP_FILES = ['./index.html', './logo.webp', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png', './apple-touch-icon.png', './favicon-64.png'];
 
 const CONTROLS_STYLE = `<style id="compat-controls-v13">
 .game-wrap { grid-template-rows: auto auto minmax(0, 1fr) auto !important; }
@@ -79,6 +79,12 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+  const requestUrl = new URL(event.request.url);
+  const logoUrl = new URL('./logo.webp', self.location.href);
+  if (requestUrl.href === logoUrl.href) {
+    event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request)));
+    return;
+  }
   if (event.request.mode !== 'navigate' || new URL(event.request.url).origin !== self.location.origin) return;
   event.respondWith(
     fetch(event.request).then(response => addControlsCompatibility(response).then(enhanced => {
