@@ -1159,11 +1159,11 @@
   document.querySelectorAll('.modal img').forEach(img => img.addEventListener('load', schedulePopupFit));
   document.fonts?.ready.then(schedulePopupFit);
   schedulePopupFit();
-  const GAME_VERSION = '2026.10.03.1';
+  const GAME_VERSION = '2026.10.07.1';
   const SESSION_STORAGE_KEY = 'lavibora_tracking_session';
   const TRACKING_QUEUE_KEY = 'lavibora_tracking_queue';
   const TOTAL_LIVES = 3;
-  const SNAKE_INTERVALS_BY_LEVEL = [960, 916, 650, 610, 570, 530, 490, 450, 410, 370];
+  const SNAKE_INTERVALS_BY_LEVEL = [700, 640, 580, 525, 475, 430, 390, 350, 315, 285];
   const LIFE_LOSS_MESSAGES = [
     'Has perdido una de tus tres vidas. Recuerda: si no verifico corro el riesgo de consumir y compartir contenido que puede afectar la toma de decisiones. Por ejemplo, datos imprecisos en época de campaña electoral que pueden afectar mi decisión de voto, información falsa sobre medicinas o curas milagrosas para tratar enfermedades en lugar de recomendaciones de médicos y especialistas, así como promociones e información engañosa que busca apropiarse de claves o datos personales para estafar.',
     'Has perdido una de tus tres vidas. Recuerda: si no verifico corro el riesgo de multiplicar la propagación de desinformación que puede perjudicar a personas u organizaciones reales que se encuentran detrás de las redes sociales. Un estudio del MIT, Instituto Tecnológico de Massachusetts (en inglés Massachusetts Institute of Technology) analizó entre el 2006 y 2017 información compartida en Twitter, hoy X, y detectó que las noticias falsas se compartieron 70% más que la información real. En la era de la IA, la información verdadera se confunde también entre deep fakes y cheap fakes.',
