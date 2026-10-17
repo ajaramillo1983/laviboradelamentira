@@ -902,6 +902,42 @@
       #startOverlay .modal-logo { max-height: min(18dvh, 120px); }
       #startOverlay p { font-size: 12px; }
     }
+    @media (max-width: 600px) and (orientation: portrait) {
+      #itemOverlay .modal, #messageOverlay .modal, #quizOverlay .modal {
+        width: min(620px, 100%);
+        padding: clamp(18px, 5vw, 28px);
+        border-radius: 22px;
+      }
+      #itemOverlay .modal .big { font-size: clamp(54px, 13vw, 72px); margin-bottom: 8px; }
+      #itemOverlay .modal h2, #messageOverlay .modal h2, #quizOverlay .modal h2 {
+        margin: 8px 0 10px;
+        font-size: clamp(26px, 7.5vw, 36px);
+        line-height: 1.15;
+      }
+      #itemOverlay .item-message {
+        max-width: 38ch;
+        margin: 12px auto;
+        font-size: clamp(17px, 4.7vw, 21px) !important;
+        line-height: 1.5 !important;
+      }
+      #itemOverlay .item-countdown {
+        margin: 14px 0 6px;
+        font-size: clamp(15px, 4vw, 18px);
+        line-height: 1.4;
+      }
+      #itemOverlay .countdown-number { width: 34px; height: 34px; font-size: 17px; }
+      #itemOverlay #continueBtn, #messageOverlay .modal button.action, #quizOverlay .modal button.action {
+        min-height: 52px;
+        padding: 12px 18px;
+        font-size: 16px;
+        border-radius: 14px;
+      }
+      #itemOverlay .modal-buttons, #messageOverlay .modal-buttons, #quizOverlay .modal-buttons {
+        margin-top: 14px;
+        gap: 10px;
+      }
+    }
+
     @media (max-height: 520px) and (min-width: 601px) {
       #startOverlay .modal-content { display: grid; grid-template-columns: 140px minmax(0, 1fr); column-gap: 14px; }
       #startOverlay .logo-frame { grid-column: 1; grid-row: 1 / 3; align-self: center; }
