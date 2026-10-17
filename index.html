@@ -1159,11 +1159,12 @@
   document.querySelectorAll('.modal img').forEach(img => img.addEventListener('load', schedulePopupFit));
   document.fonts?.ready.then(schedulePopupFit);
   schedulePopupFit();
-  const GAME_VERSION = '2026.10.07.7';
+  const GAME_VERSION = '2026.10.17.1';
   const SESSION_STORAGE_KEY = 'lavibora_tracking_session';
   const TRACKING_QUEUE_KEY = 'lavibora_tracking_queue';
   const TOTAL_LIVES = 3;
-  const SNAKE_INTERVALS_BY_LEVEL = [340, 320, 300, 280, 260, 240, 220, 200, 180, 160];
+  const SNAKE_INTERVALS_BY_LEVEL = [460, 440, 420, 400, 380, 360, 340, 320, 300, 280];
+  const MAX_SNAKE_LENGTH = 6;
   const LIFE_LOSS_MESSAGES = [
     'Has perdido una de tus tres vidas. Recuerda: si no verifico corro el riesgo de consumir y compartir contenido que puede afectar la toma de decisiones. Por ejemplo, datos imprecisos en época de campaña electoral que pueden afectar mi decisión de voto, información falsa sobre medicinas o curas milagrosas para tratar enfermedades en lugar de recomendaciones de médicos y especialistas, así como promociones e información engañosa que busca apropiarse de claves o datos personales para estafar.',
     'Has perdido una de tus tres vidas. Recuerda: si no verifico corro el riesgo de multiplicar la propagación de desinformación que puede perjudicar a personas u organizaciones reales que se encuentran detrás de las redes sociales. Un estudio del MIT, Instituto Tecnológico de Massachusetts (en inglés Massachusetts Institute of Technology) analizó entre el 2006 y 2017 información compartida en Twitter, hoy X, y detectó que las noticias falsas se compartieron 70% más que la información real. En la era de la IA, la información verdadera se confunde también entre deep fakes y cheap fakes.',
@@ -1922,9 +1923,9 @@
     ui.messageText.textContent = LIFE_LOSS_MESSAGES[messageIndex];
     ui.messageStats.textContent = livesRemaining > 0
       ? `Te ${livesRemaining === 1 ? 'queda' : 'quedan'} ${livesRemaining} ${livesRemaining === 1 ? 'vida' : 'vidas'}.`
-      : 'Para volver a jugar debes comenzar nuevamente desde el nivel 1.';
-    resultAction = livesRemaining > 0 ? 'retry' : 'restart';
-    ui.retryBtn.textContent = livesRemaining > 0 ? 'Reintentar nivel' : 'Volver al nivel 1';
+      : `Perdiste las tres vidas. Puedes volver a intentar el nivel ${currentLevel}.`;
+    resultAction = 'retry';
+    ui.retryBtn.textContent = livesRemaining > 0 ? 'Reintentar nivel' : 'Reintentar este nivel';
     menuAction = 'exit';
     ui.menuBtn.textContent = 'Salir del juego';
     ui.menuBtn.classList.remove('hidden');
@@ -2592,7 +2593,7 @@
     ui.startLevelMission.textContent = `Misión: ${LEVEL_MISSIONS[currentLevel - 1]}`;
     ui.gameIntroduction.classList.toggle('hidden', currentLevel !== 1);
     document.getElementById('avatarGrid').classList.toggle('hidden', currentLevel !== 1);
-    ui.startLevelText.textContent = `Recoge ${joinLabels(labels)}. La salida se abrirá cuando completes los ${activeTypes.length} elementos.`;
+    ui.startLevelText.textContent = `${currentLevel === 1 ? 'Tú eres el avatar: muévete por el laberinto para escapar de la víbora. ' : ''}Recoge ${joinLabels(labels)}. La salida se abrirá cuando completes los ${activeTypes.length} elementos.`;
   }
 
   function updateUI() {
@@ -2698,9 +2699,9 @@
     if (next.r !== head.r || next.c !== head.c) {
       snakeFacing = { r: next.r - head.r, c: next.c - head.c };
     }
-    // Crece un segmento cada vez que logra avanzar.
-    // La nueva cabeza ocupa la siguiente casilla y se conserva todo el cuerpo anterior.
+    // La víbora avanza y crece hasta un límite para mantenerla más corta.
     snake = [{ r: next.r, c: next.c }, ...snake.map(segment => ({ ...segment }))];
+    if (snake.length > MAX_SNAKE_LENGTH) snake.pop();
     savedSnakeLength = snake.length;
 
     checkPlayerSnakeCollision();
@@ -3029,6 +3030,14 @@
   }
 
   function handleResultAction() {
+    if (resultAction === 'retry' && livesRemaining <= 0) {
+      livesRemaining = TOTAL_LIVES;
+      updateLivesUI();
+      void trackEvent('level_retry_after_lives_exhausted', {
+        nivel_reintentado: currentLevel,
+        vidas_restauradas: TOTAL_LIVES
+      }, { vida: TOTAL_LIVES });
+    }
     if (resultAction === 'quiz') {
       startQuiz();
       return;
