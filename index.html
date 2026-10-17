@@ -285,6 +285,9 @@
     .audio-controls button { min-height: 36px; padding: 5px 10px; }
     .audio-controls input { width: 100px; accent-color: var(--accent); }
     .audio-preview-status { flex-basis: 100%; min-height: 1.2em; text-align: center; color: #d8fffb; }
+    .item-countdown { margin: 10px 0 2px; color: #c8f5f1; font-size: 13px; font-weight: 750; }
+    .countdown-number { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-left: 5px; border: 1px solid rgba(32,245,229,.55); border-radius: 50%; color: #001817; background: var(--accent); font-size: 13px; font-weight: 900; }
+    #continueBtn:disabled { opacity: .52; cursor: not-allowed; filter: saturate(.55); }
 
     button.action {
       min-height: 36px;
@@ -1034,6 +1037,7 @@
             <div id="itemIcon" class="big">🔎</div>
             <h2 id="itemTitle">Elemento de verificación</h2>
             <p id="itemText" class="item-message"></p>
+            <p id="itemCountdown" class="item-countdown" aria-live="polite">Lee con detenimiento. En cinco segundos podrás volver a la partida. <span id="itemCountdownNumber" class="countdown-number">5</span></p>
             <div class="modal-buttons">
               <button type="button" id="continueBtn" class="action primary">Continuar jugando</button>
             </div>
@@ -1443,6 +1447,8 @@
     itemIcon: document.getElementById('itemIcon'),
     itemTitle: document.getElementById('itemTitle'),
     itemText: document.getElementById('itemText'),
+    itemCountdown: document.getElementById('itemCountdown'),
+    itemCountdownNumber: document.getElementById('itemCountdownNumber'),
     continueBtn: document.getElementById('continueBtn'),
     messageOverlay: document.getElementById('messageOverlay'),
     startBtn: document.getElementById('startBtn'),
@@ -1558,6 +1564,7 @@
   let elapsed = 0;
   let snakeTimer = 0;
   let snakeVisualTime = 0;
+  let itemCountdownTimer = null;
   let lastFrame = performance.now();
   let snakeInterval = 430;
   let graceUntil = 0;
@@ -2666,12 +2673,33 @@
     ui.itemIcon.textContent = itemData.icon;
     ui.itemTitle.textContent = itemData.label.charAt(0).toUpperCase() + itemData.label.slice(1);
     ui.itemText.textContent = itemData.message;
+    if (itemCountdownTimer) clearInterval(itemCountdownTimer);
+    let secondsRemaining = 5;
+    ui.itemCountdown.textContent = 'Lee con detenimiento. En cinco segundos podrás volver a la partida. ';
+    ui.itemCountdownNumber.textContent = String(secondsRemaining);
+    ui.itemCountdown.append(ui.itemCountdownNumber);
+    ui.continueBtn.disabled = true;
     ui.itemOverlay.classList.remove('hidden');
-    focusPopupButton(ui.continueBtn);
+    itemCountdownTimer = setInterval(() => {
+      secondsRemaining -= 1;
+      if (secondsRemaining > 0) {
+        ui.itemCountdownNumber.textContent = String(secondsRemaining);
+        return;
+      }
+      clearInterval(itemCountdownTimer);
+      itemCountdownTimer = null;
+      ui.itemCountdown.textContent = 'Ya puedes continuar la partida.';
+      ui.continueBtn.disabled = false;
+      focusPopupButton(ui.continueBtn);
+    }, 1000);
   }
 
   function continueAfterItem() {
-    if (gameState !== 'learning') return;
+    if (gameState !== 'learning' || ui.continueBtn.disabled) return;
+    if (itemCountdownTimer) {
+      clearInterval(itemCountdownTimer);
+      itemCountdownTimer = null;
+    }
     ui.itemOverlay.classList.add('hidden');
     gameState = 'playing';
     startTime = performance.now() - elapsed * 1000;
