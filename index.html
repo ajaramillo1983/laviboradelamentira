@@ -903,39 +903,58 @@
       #startOverlay p { font-size: 12px; }
     }
     @media (max-width: 600px) and (orientation: portrait) {
-      #itemOverlay .modal, #messageOverlay .modal, #quizOverlay .modal {
+      #itemOverlay .modal, #messageOverlay .modal, #quizOverlay .modal, #welcomeOverlay .modal {
         width: min(620px, 100%);
-        padding: clamp(18px, 5vw, 28px);
-        border-radius: 22px;
+        min-height: min(84%, 560px);
+        padding: clamp(20px, 6vw, 32px);
+        border-radius: 24px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        overflow-y: auto;
       }
-      #itemOverlay .modal .big { font-size: clamp(54px, 13vw, 72px); margin-bottom: 8px; }
-      #itemOverlay .modal h2, #messageOverlay .modal h2, #quizOverlay .modal h2 {
-        margin: 8px 0 10px;
-        font-size: clamp(26px, 7.5vw, 36px);
+      #itemOverlay .modal-content, #messageOverlay .modal-content, #quizOverlay .modal-content, #welcomeOverlay .modal-content {
+        flex: 1;
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+        align-items: stretch;
+        gap: clamp(12px, 2.8dvh, 26px);
+      }
+      #itemOverlay .modal .big, #messageOverlay .modal .big, #quizOverlay .modal .big {
+        font-size: clamp(72px, 18vw, 96px);
+        margin: 0;
+      }
+      #itemOverlay .modal h2, #messageOverlay .modal h2, #quizOverlay .modal h2, #welcomeOverlay .modal h2 {
+        margin: 8px 0;
+        font-size: clamp(34px, 9vw, 44px);
         line-height: 1.15;
       }
-      #itemOverlay .item-message {
+      #itemOverlay .item-message, #messageOverlay .modal p, #quizOverlay .modal p, #welcomeOverlay .modal p {
         max-width: 38ch;
-        margin: 12px auto;
-        font-size: clamp(17px, 4.7vw, 21px) !important;
+        margin: 8px auto;
+        font-size: clamp(20px, 5.6vw, 25px) !important;
         line-height: 1.5 !important;
       }
       #itemOverlay .item-countdown {
-        margin: 14px 0 6px;
-        font-size: clamp(15px, 4vw, 18px);
+        margin: 10px auto;
+        font-size: clamp(18px, 4.8vw, 21px);
         line-height: 1.4;
       }
-      #itemOverlay .countdown-number { width: 34px; height: 34px; font-size: 17px; }
-      #itemOverlay #continueBtn, #messageOverlay .modal button.action, #quizOverlay .modal button.action {
-        min-height: 52px;
-        padding: 12px 18px;
-        font-size: 16px;
-        border-radius: 14px;
+      #itemOverlay .countdown-number { width: 42px; height: 42px; font-size: 21px; }
+      #itemOverlay #continueBtn, #messageOverlay .modal button.action, #quizOverlay .modal button.action, #welcomeOverlay #welcomeContinueBtn {
+        min-height: 60px;
+        padding: 14px 22px;
+        font-size: 19px;
+        border-radius: 16px;
       }
-      #itemOverlay .modal-buttons, #messageOverlay .modal-buttons, #quizOverlay .modal-buttons {
-        margin-top: 14px;
-        gap: 10px;
+      #itemOverlay .modal-buttons, #messageOverlay .modal-buttons, #quizOverlay .modal-buttons, #welcomeOverlay .modal-buttons {
+        margin-top: 12px;
+        gap: 12px;
       }
+      #welcomeOverlay .logo-frame { width: min(82vw, 390px); margin: 0 auto; }
+      #welcomeOverlay .modal-logo { max-height: min(28dvh, 230px); }
     }
 
     @media (max-height: 520px) and (min-width: 601px) {
@@ -1110,6 +1129,17 @@
             </div>
           </div>
         </div>
+
+        <div id="welcomeOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle">
+          <div class="modal">
+            <div class="logo-frame"><img class="modal-logo" src="./logo.webp" alt="Logo de Snake Fake" /></div>
+            <h2 id="welcomeTitle">Bienvenidos a Snake Fake</h2>
+            <p>Debes escapar de la víbora utilizando los controles de flechas de tu PC o los que aparecen en tu dispositivo móvil.</p>
+            <div class="modal-buttons">
+              <button type="button" id="welcomeContinueBtn" class="action primary">Entrar al juego</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="game-controls" aria-label="Controles del juego">
@@ -1157,6 +1187,13 @@
       // Scaling an editable form defeats iOS's 16px focus-zoom protection.
       // Allow this panel to scroll while the keyboard is open instead.
       if (registration) return;
+      const mobileReadablePopup = window.matchMedia('(max-width: 600px) and (orientation: portrait)').matches
+        && ['itemOverlay', 'messageOverlay', 'quizOverlay', 'welcomeOverlay'].includes(overlay.id);
+      if (mobileReadablePopup) {
+        content.style.zoom = '1';
+        modal.style.overflowY = 'auto';
+        return;
+      }
       const availableHeight = overlay.clientHeight
         - parseFloat(overlayStyle.paddingTop) - parseFloat(overlayStyle.paddingBottom)
         - parseFloat(modalStyle.paddingTop) - parseFloat(modalStyle.paddingBottom)
@@ -1463,6 +1500,8 @@
   ];
 
   const ui = {
+    welcomeOverlay: document.getElementById('welcomeOverlay'),
+    welcomeContinueBtn: document.getElementById('welcomeContinueBtn'),
     startOverlay: document.getElementById('startOverlay'),
     gameIntroduction: document.getElementById('gameIntroduction'),
     startLevelMission: document.getElementById('startLevelMission'),
@@ -6581,6 +6620,9 @@
     });
   });
 
+  ui.welcomeContinueBtn.addEventListener('click', () => {
+    ui.welcomeOverlay.classList.add('hidden');
+  });
   ui.registrationForm.addEventListener('submit', handleRegistration);
   ui.startBtn.addEventListener('click', startSelected);
   ui.continueBtn.addEventListener('click', continueAfterItem);
